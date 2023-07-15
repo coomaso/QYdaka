@@ -208,7 +208,7 @@ def get_login():
                 XMB = get_ppname(access_token,XMB_ID,XMB_KEY)
                 #print(XMB)
                 #content = f'#考勤提示:<font color=\"warning\">'+XMB_NAME+'</font>'+datetime.datetime.now().strftime("%m-%d %H:%M")+'\n'+str(GESHIHUAXMB_QUE_NAME(XMB['QUE']))+'\n'+str(GESHIHUAXMB_JIA_NAME(XMB['JIA']))
-                content = f'## 考勤提示:<font color=\"info\">'+XMB_NAME+'</font>'+datetime.datetime.now().strftime("%m-%d %H:%M")+'\n>**<font color=\"warning\">缺勤人员:'+str(GESHIHUAXMB_QUE_NAME(XMB['QUE']))+'</font>**\n>请假人员:<font color=\"comment\">'+str(GESHIHUAXMB_JIA_NAME(XMB['JIA']))+'</font>\n>完成人员:<font color=\"comment\">'+str(GESHIHUAXMB_JIA_NAME(XMB['OK'])+'</font>\n')
+                content = f'## 考勤提示:<font color=\"info\">'+XMB_NAME+'</font>'+datetime.datetime.now()+datetime.timedelta(hours=8).strftime("%m-%d %H:%M")+'\n>**<font color=\"warning\">缺勤人员:'+str(GESHIHUAXMB_QUE_NAME(XMB['QUE']))+'</font>**\n>请假人员:<font color=\"comment\">'+str(GESHIHUAXMB_JIA_NAME(XMB['JIA']))+'</font>\n>完成人员:<font color=\"comment\">'+str(GESHIHUAXMB_JIA_NAME(XMB['OK'])+'</font>\n')
                 #content = f'#考勤提示:<font color=\"warning\">'+XMB_NAME+'</font>'+datetime.datetime.now().strftime("%m-%d %H:%M")+'\n'+XMB['QUE']+'\n'+XMB['JIA']
                 #print(content)
                 #if  len(message)>4:
