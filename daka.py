@@ -162,7 +162,7 @@ def GESHIHUAXMB_JIA_NAME(data):
     
 def get_login():
     try:
-        access_token = update_access_token()
+        access_token = get_access_token()
     except KeyError:
         access_token = get_access_token()
     headers = {
