@@ -7,9 +7,9 @@ import os
 
 # 实例属性
 # 登录接口url https://www.sskj-hengyun.com/laboratt/statisticsManager/getGlgwJobIsCheck?engId=122bc04151764d4dbeaa9490e2ced0d5&workId=2945d191797449cd69f60dffeeaa3d0f&checkDay=2023-07-06
-login_url = "https://www.sskj-hengyun.com/labor/workordereng/getEngsPageByUser"
+login_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngsPageByUser"
 # 需要使用token获取数据接口url
-getActivity_url = "https://www.sskj-hengyun.com/auth/oauth/token"
+getActivity_url = "https://zhcjsmz.sc.yichang.gov.cn/auth/oauth/token"
 #企业微信机器人hook
 wexinqq_url="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c54716bc-1e20-4e2c-99cd-e61267902850"
 #身份证idCardNumber查询接口 获取电话号码,身份证号码,头像
@@ -44,10 +44,10 @@ def get_access_token():
     headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
     "Content-Type": "application/x-www-form-urlencoded",
-    "Authorization": "Basic c3Nrajpzc2tq",
-    "Host": "www.sskj-hengyun.com",
-    "Origin": "https://www.sskj-hengyun.com",
-    "Referer": "https://www.sskj-hengyun.com/login/"
+    "Authorization": "Basic cGlnOnBpZw==",
+    "Host": "zhcjsmz.sc.yichang.gov.cn",
+    "Origin": "https://zhcjsmz.sc.yichang.gov.cn",
+    "Referer": "https://zhcjsmz.sc.yichang.gov.cn/login/"
     }
     # 编码格式为application/x-www-form-urlencoded;charset=UTF-8，所以请求参数为dict，使用data参数
     response = requests.post(url=getActivity_url, data=data, headers=headers).json()
