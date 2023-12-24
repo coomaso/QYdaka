@@ -6,18 +6,18 @@ import os
 
 
 # 实例属性
-# 登录接口url https://www.sskj-hengyun.com/laboratt/statisticsManager/getGlgwJobIsCheck?engId=122bc04151764d4dbeaa9490e2ced0d5&workId=2945d191797449cd69f60dffeeaa3d0f&checkDay=2023-07-06
+# 登录接口url https://zhcjsmz.sc.yichang.gov.cn/laboratt/statisticsManager/getGlgwJobIsCheck?engId=122bc04151764d4dbeaa9490e2ced0d5&workId=2945d191797449cd69f60dffeeaa3d0f&checkDay=2023-07-06
 login_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngsPageByUser"
 # 需要使用token获取数据接口url
 getActivity_url = "https://zhcjsmz.sc.yichang.gov.cn/auth/oauth/token"
 #企业微信机器人hook
 wexinqq_url="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c54716bc-1e20-4e2c-99cd-e61267902850"
 #身份证idCardNumber查询接口 获取电话号码,身份证号码,头像
-idCardNumber_url="https://www.sskj-hengyun.com/labor/person/pageNotAvatar?idCardNumber=420526198606271020"
+idCardNumber_url="https://zhcjsmz.sc.yichang.gov.cn/labor/person/pageNotAvatar?idCardNumber=420526198606271020"
 #身份证idCardNumber反查接口
-idPP_url="https://www.sskj-hengyun.com/labor/person/27faee7bb9cccc3322cad7d9da6ed623"
+idPP_url="https://zhcjsmz.sc.yichang.gov.cn/labor/person/27faee7bb9cccc3322cad7d9da6ed623"
 #项目信息反查
-idXMB_url="https://www.sskj-hengyun.com/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
+idXMB_url="https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
 
 def Send_Wexinqq_MD(webhook, content):
     header = {
@@ -80,11 +80,11 @@ def get_ppname(Access_token,XMB_ID,XMB_KEY):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f'bearer {Access_token}',
-        "host": "www.sskj-hengyun.com",
-        "Referer": "https://www.sskj-hengyun.com/cyrygl/"
+        "host": "zhcjsmz.sc.yichang.gov.cn",
+        "Referer": "https://zhcjsmz.sc.yichang.gov.cn/cyrygl/"
         }
-    JobCheckurl = 'https://www.sskj-hengyun.com/laboratt/statisticsManager/getGlgwJobIsCheck?engId='+XMB_ID+'&workId='+XMB_KEY+'&checkDay='+datetime.datetime.now().strftime("%Y-%m-%d")
-    #JobCheckurl = 'https://www.sskj-hengyun.com/laboratt/statisticsManager/getGlgwJobIsCheck?engId='+XMB_ID+'&workId='+XMB_KEY+'&checkDay='+(datetime.datetime.now()+datetime.timedelta(days=-1)).strftime("%Y-%m-%d")
+    JobCheckurl = 'https://zhcjsmz.sc.yichang.gov.cn/laboratt/statisticsManager/getGlgwJobIsCheck?engId='+XMB_ID+'&workId='+XMB_KEY+'&checkDay='+datetime.datetime.now().strftime("%Y-%m-%d")
+    #JobCheckurl = 'https://zhcjsmz.sc.yichang.gov.cn/laboratt/statisticsManager/getGlgwJobIsCheck?engId='+XMB_ID+'&workId='+XMB_KEY+'&checkDay='+(datetime.datetime.now()+datetime.timedelta(days=-1)).strftime("%Y-%m-%d")
     response_name = requests.get(url=JobCheckurl,headers=headers).json()
     #print(response_name)
     #data = json.loads(response_name)
@@ -162,14 +162,14 @@ def GESHIHUAXMB_JIA_NAME(data):
     
 def get_login():
     try:
-        access_token = get_access_token()
+        access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsaWNlbnNlIjoibWFkZSBieSBzc2tqIiwidXNlcl9uYW1lIjoiMTM0ODcyODMwMTMiLCJzY29wZSI6WyJzZXJ2ZXIiXSwib3JnYW5JZCI6IjQwMjg4MWM0MmNhZWM5YmYwMTJjYWVjYTM5N2YwMzcwIiwiZXhwIjoxNzAzNDQ0NDQ1LCJ1c2VySWQiOjExMDQsImF1dGhvcml0aWVzIjpbIlJPTEVfTEFCT1JfQ0lPIiwiUk9MRV9MQUJPUl9TTUIiXSwianRpIjoiMjhlMjg3MzctNjNkMi00OWU1LTk1NWEtOGFmMTlmYTE3MGZiIiwiY2xpZW50X2lkIjoicGlnIn0.AY4jCWbn22aUKU22dgkZHICrS_gXO7j51fUVz_WtQZY"
     except KeyError:
         access_token = get_access_token()
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f'bearer {access_token}',
-        "Referer": "https://www.sskj-hengyun.com/cyrygl/"
+        "Referer": "https://zhcjsmz.sc.yichang.gov.cn/cyrygl/"
         }
     #获取在建项目列表
     #response = requests.get(url=login_url,headers=headers).json()
