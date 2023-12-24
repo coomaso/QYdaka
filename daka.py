@@ -133,8 +133,8 @@ def get_login():
                     f">完成人员:<font color=\"comment\">{str(GESHIHUAXMB_JIA_NAME(XMB['OK']))}</font>\n"
                 )
                 send_wexinqq_md(wexinqq_url, content)
-             time.sleep(3 + 2 * random.random())               
-        time.sleep(3 + 2 * random.random())   
+                time.sleep(3 + 2 * random.random())
+        time.sleep(3 + 2 * random.random())
         page += 1
 
 get_login()
