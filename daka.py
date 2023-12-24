@@ -135,8 +135,8 @@ def get_login():
                 content = (
                     f'## 考勤提示:<font color=\"info\">{XMB_NAME}</font>{current_time}\n'
                     f">**<font color=\"warning\">缺勤人员:{str(GESHIHUAXMB_QUE_NAME(XMB['QUE']))}</font>**\n"
-                    f">请假人员:<font color=\"comment\">{str(GESHIHUAXMB_JIA_NAME(XMB['JIA']))}</font>\n"
-                    f">完成人员:<font color=\"comment\">{str(GESHIHUAXMB_JIA_NAME(XMB['OK']))}</font>\n"
+                    f">请假人员:<font color=\"comment\">{str(GESHIHUAXMB_QUE_NAME(XMB['JIA']))}</font>\n"
+                    f">完成人员:<font color=\"comment\">{str(GESHIHUAXMB_QUE_NAME(XMB['OK']))}</font>\n"
                 )
                 send_wexinqq_md(wexinqq_url, content)
                 time.sleep(3 + 2 * random.random())
