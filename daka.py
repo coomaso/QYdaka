@@ -64,6 +64,12 @@ def update_access_token():
     else:
         return access_token
 
+def GESHIHUAXMB_QUE_NAME(data):
+    if data:
+        return ''.join(data)
+    else:
+        return "没有"
+
 def get_ppname(access_token, XMB_ID, XMB_KEY):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
