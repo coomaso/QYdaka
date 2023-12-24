@@ -111,9 +111,7 @@ def get_login():
     page = 1
 
     while page <= pages:
-        begin = time.time()
-        url = f'{login_url}?limit=10&page={page}'
-        
+        url = f'{login_url}?limit=10&page={page}'        
         try:
             response_list = requests.get(url=url, headers=headers).json()
         except KeyError:
@@ -134,8 +132,8 @@ def get_login():
                     f">完成人员:<font color=\"comment\">{str(GESHIHUAXMB_JIA_NAME(XMB['OK']))}</font>\n"
                 )
                 send_wexinqq_md(wexinqq_url, content)
-             time.sleep((5.0 - time.time() + begin) if time.time() - begin < 5.0 else 0.0)               
-        time.sleep((5.0 - time.time() + begin) if time.time() - begin < 5.0 else 0.0)   
+             time.sleep(3 + 2 * random.random())               
+        time.sleep(3 + 2 * random.random())   
         page += 1
 
 get_login()
