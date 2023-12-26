@@ -7,10 +7,10 @@ on:
   schedule:
     - cron: "30 * * * *"
   push:
-    branches: [ "main" ]
+    branches: [ "access_token" ]
     
   pull_request:
-    branches: [ "main" ]
+    branches: [ "access_token" ]
 
 permissions:
   contents: read
