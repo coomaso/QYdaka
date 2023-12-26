@@ -7,7 +7,7 @@ import random
 
 login_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngsPageByUser"
 getActivity_url = "https://zhcjsmz.sc.yichang.gov.cn/auth/oauth/token"
-wexinqq_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=4576c3a0-9e34-4857-92b1-96f91a6246cf"
+wexinqq_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c54716bc-1e20-4e2c-99cd-e61267902850"
 idCardNumber_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/person/pageNotAvatar?idCardNumber=420526198606271020"
 idPP_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/person/27faee7bb9cccc3322cad7d9da6ed623"
 idXMB_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
@@ -27,27 +27,26 @@ def send_wexinqq_md(webhook, content):
     requests.post(url=webhook, data=data, headers=header)
 
 def get_access_token():
-    data = {
-        "username": "13487283013",
-        "password": "13487283013",
-        "type": "account",
-        "grant_type": "password"
-    }
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": "Basic cGlnOnBpZw==",
-        "Host": "zhcjsmz.sc.yichang.gov.cn",
-        "Origin": "https://zhcjsmz.sc.yichang.gov.cn",
-        "Referer": "https://zhcjsmz.sc.yichang.gov.cn/login/"
-    }
-    response = requests.post(url=getActivity_url, data=data, headers=headers).json()
-    access_token = response["access_token"]
-    return access_token
+    # Get the full path to the script's directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, 'access_token.json')
+
+    try:
+        with open(file_path, 'r') as json_file:
+            data = json.load(json_file)
+            return data.get('access_token', None)
+    except FileNotFoundError:
+        # Handle the case where the file is not found
+        print(f"File not found: {file_path}")
+        return None
+    except json.JSONDecodeError:
+        # Handle the case where the file content is not a valid JSON
+        print(f"Error decoding JSON in {file_path}")
+        return None
 
 def update_access_token():
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_name = 'access_token.txt'
+    file_name = 'access_token.json'
     file_path = os.path.join(current_dir, file_name)
     
     with open(file_path, 'r') as file:
@@ -103,7 +102,7 @@ def format_result(data):
 
 def get_login():
     try:
-        access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsaWNlbnNlIjoibWFkZSBieSBzc2tqIiwidXNlcl9uYW1lIjoiMTM0ODcyODMwMTMiLCJzY29wZSI6WyJzZXJ2ZXIiXSwib3JnYW5JZCI6IjQwMjg4MWM0MmNhZWM5YmYwMTJjYWVjYTM5N2YwMzcwIiwiZXhwIjoxNzAzNjI0NzA0LCJ1c2VySWQiOjExMDQsImF1dGhvcml0aWVzIjpbIlJPTEVfTEFCT1JfQ0lPIiwiUk9MRV9MQUJPUl9TTUIiXSwianRpIjoiYzEwODI4ZGMtMzRiYS00NWRlLWJiNTQtMzU5OTYzYWYwZjIyIiwiY2xpZW50X2lkIjoicGlnIn0.geHpv8P4M4nfD7hs1TP6eiZQlcidKieKjKnZJ9LPzmQ"
+        access_token = get_access_token()
     except KeyError:
         access_token = get_access_token()
     
