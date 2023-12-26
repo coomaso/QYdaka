@@ -26,22 +26,27 @@ def send_wexinqq_md(webhook, content):
     data = json.dumps(alarm)
     requests.post(url=webhook, data=data, headers=header)
 
+#远程获取access_token.json
 def get_access_token():
-    # Get the full path to the script's directory
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(current_dir, 'access_token.json')
-
     try:
-        with open(file_path, 'r') as json_file:
-            data = json.load(json_file)
-            return data.get('access_token', None)
-    except FileNotFoundError:
-        # Handle the case where the file is not found
-        print(f"File not found: {file_path}")
+        url = 'https://bimcn.co/bid/SHIMING/access_token.json'
+        response = requests.get(url)
+
+        # Check if the request was successful (status code 200)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('access_token')
+        else:
+            print(f"Failed to fetch access token. Status code: {response.status_code}")
+            return None
+
+    except requests.RequestException as e:
+        # Handle network or request-related errors
+        print(f"Error fetching access token: {e}")
         return None
     except json.JSONDecodeError:
-        # Handle the case where the file content is not a valid JSON
-        print(f"Error decoding JSON in {file_path}")
+        # Handle the case where the response content is not valid JSON
+        print(f"Error decoding JSON in the response")
         return None
 
 def update_access_token():
@@ -113,9 +118,9 @@ def get_login():
         "Referer": "https://zhcjsmz.sc.yichang.gov.cn/cyrygl/"
     }
     
-    pages = 3
-    page = 1
 
+    page = 1
+    pages = 1
     while page <= pages:
         url = f'{login_url}?limit=10&page={page}'        
         try:
@@ -123,7 +128,7 @@ def get_login():
         except KeyError:
             access_token = get_access_token()
             response_list = requests.get(url=url, headers=headers).json()
-        
+        pages = response_list['data']['pages']
         for item in response_list['data']['records']:
             if item['isFinish'] == '否':
                 XMB_NAME = item['sgxkName']
