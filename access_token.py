@@ -141,7 +141,7 @@ def resize_image(base64_string, new_width):
 # Function to read the existing access token and timestamp from access_token.json
 def read_access_token():
     try:
-        with open('access_token.json', 'r') as json_file:
+        with open('../access_token.json', 'r') as json_file:
             data = json.load(json_file)
             return data.get('access_token'), data.get('timestamp', 0)
     except FileNotFoundError:
@@ -229,7 +229,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
     
         #htm = session.get(f"{base_url}/auth/custom/token", data=pverdat2, headers=headers)
         pverdat3 = json.dumps({
-            "sskjPassword": "qnsXYUm303WQpeci1uwc+w==",
+            "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4=",
             
         })
         logger.info(f"headers: {headers}")
@@ -247,7 +247,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
             }
     
             # Write the dictionary to a local JSON file
-            with open('access_token.json', 'w') as json_file:
+            with open('../access_token.json', 'w') as json_file:
                 json.dump(access_token_data, json_file)
     
         except KeyError:
