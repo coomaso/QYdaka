@@ -215,9 +215,9 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         logger.info(f"解码密文: {decoded_captcha}")
         
         pverdat2 = json.dumps({
-            "sskjPassword": "qnsXYUm303WQpeci1uwc+w==",
+            "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4=",
             "username":"13487283013",
-            "password":"13487283013",
+            "password":"YCsmz@#Zhou88910440",
             "grant_type":"password",
             "scope":"server",
             "code":captcha,
