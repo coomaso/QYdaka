@@ -189,39 +189,37 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
 
     htm = session.post(f"{base_url}/code/check", json=json.loads(pverdat), headers=headers)
     logger.info(f"图形验证check回参 {htm.json()}")
-    if '执行成功' in htm.json().get('msg', ''):
-        captcha = aes_encrypt(token + '---' + posStr, secret_key)
 
-        pverdat2 = json.dumps({
-            "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="
-        })
-        
-        htm = session.post(
-            f"{base_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
-            data=pverdat2,
-            headers=headers
-        )
+    captcha = aes_encrypt(token + '---' + posStr, secret_key)
 
-        try:
-            access_token_value = htm.json().get('access_token')
-            if access_token_value:
-                logger.info(f"成功获取 access_token: {access_token_value}")
+    pverdat2 = json.dumps({
+        "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="
+    })
+    
+    htm = session.post(
+        f"{base_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
+        data=pverdat2,
+        headers=headers
+    )
 
-                access_token_data = {
-                    'access_token': access_token_value,
-                    'timestamp': int(time.time())
-                }
+    try:
+        access_token_value = htm.json().get('access_token')
+        if access_token_value:
+            logger.info(f"成功获取 access_token: {access_token_value}")
 
-                with open('../access_token.json', 'w') as json_file:
-                    json.dump(access_token_data, json_file)
+            access_token_data = {
+                'access_token': access_token_value,
+                'timestamp': int(time.time())
+            }
 
-                break  # 成功获取 access_token，退出循环
-        except Exception as e:
-            logger.error(f"尝试{attempt+1}失败: {str(e)}")
-            attempt += 1
-            time.sleep(random.uniform(1, 3))  # 已修复括号问题
+            with open('../access_token.json', 'w') as json_file:
+                json.dump(access_token_data, json_file)
 
-    else:
-        logger.critical("已达到最大重试次数")
+            break  # 成功获取 access_token，退出循环
+    except Exception as e:
+        logger.error(f"尝试{attempt+1}失败: {str(e)}")
+        attempt += 1
+        time.sleep(random.uniform(1, 3))  # 已修复括号问题
+
 else:
     logger.info(f"Token仍有效，到期时间: {datetime.fromtimestamp(existing_ts+21600).strftime('%Y-%m-%d %H:%M:%S')}")
