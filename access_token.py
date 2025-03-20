@@ -152,7 +152,7 @@ existing_access_token, existing_timestamp = read_access_token()
 # Check if the access token is not present or if the timestamp difference is greater than 6 hours
 if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 60):
    while attempt < max_attempts:
-    attempt += 1
+
     logger.info(f"第 {attempt} 次尝试获取 access_token...")
 
     session = requests.session()
@@ -191,19 +191,22 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
     logger.info(f"图形验证check回参 {htm.json()}")
 
     captcha = aes_encrypt(token + '---' + posStr, secret_key)
+    logger.info(f"加密后的 captcha: {captcha}")
+       
 
-    pverdat2 = json.dumps({
-        "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="
-    })
-    
     htm = session.post(
-        f"{base_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
-        data=pverdat2,
-        headers=headers
+    f"{base_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
+    json={"sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="},  # 改成 json 传输
+    headers=headers
     )
+       
+    logger.info(f"请求返回状态码: {htm.status_code}, 返回内容: {htm.text}")
 
     try:
-        access_token_value = htm.json().get('access_token')
+        response_json = htm.json()
+        logger.info(f"返回 JSON: {response_json}")  # 检查返回内容
+        access_token_value = response_json.get('access_token')
+        
         if access_token_value:
             logger.info(f"成功获取 access_token: {access_token_value}")
 
