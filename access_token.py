@@ -13,6 +13,9 @@ import io
 import time
 from datetime import datetime
 
+max_attempts = 20  # 最大尝试次数
+attempt = 0  # 计数器
+
 base_url = "https://zhcjsmz.sc.yichang.gov.cn"
 
 headers = {
@@ -34,19 +37,15 @@ headers = {
 def aes_encrypt(word, key_word):
     key = bytes(key_word, 'utf-8')
     srcs = bytes(word, 'utf-8')
-
     cipher = AES.new(key, AES.MODE_ECB)
     encrypted = cipher.encrypt(pad(srcs, AES.block_size))
-
     return base64.b64encode(encrypted).decode('utf-8')
 
 def aes_decrypt(ciphertext, key_word):
     key = bytes(key_word, 'utf-8')
     ciphertext = base64.b64decode(ciphertext)
-
     cipher = AES.new(key, AES.MODE_ECB)
     decrypted = unpad(cipher.decrypt(ciphertext), AES.block_size)
-
     return decrypted.decode('utf-8')
 
 # 初始化 UUID
@@ -58,8 +57,7 @@ def generate_client_uuid():
     s[14] = "4"  # time_hi_and_version字段的12-15位设置为0010
     s[19] = hex_digits[(int(s[19], 16) & 0x3) | 0x8]  # clock_seq_hi_and_reserved字段的6-7位设置为01
     s[8] = s[13] = s[18] = s[23] = "-"
-    slider = 'slider' + '-' + ''.join(s)
-    return slider
+    return 'slider-' + ''.join(s)
 
 # 获取图片函数
 def getImgPos(bg, tp, scale_factor):
@@ -153,14 +151,14 @@ existing_access_token, existing_timestamp = read_access_token()
 
 # Check if the access token is not present or if the timestamp difference is greater than 6 hours
 if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 60):
-    # 创建一个对话
+   while attempt < max_attempts:
+    attempt += 1
+    logger.info(f"第 {attempt} 次尝试获取 access_token...")
+
     session = requests.session()
     response = session.get("https://zhcjsmz.sc.yichang.gov.cn/login/#/login", headers=headers)
 
-    # 随机生成 UUID
     clientUUID = generate_client_uuid()
-
-    # 获取当前时间戳
     current_timestamp_milliseconds = round(time.time() * 1000)
 
     data = {
@@ -169,28 +167,17 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         "ts": current_timestamp_milliseconds
     }
 
-    # 获取图片
     response = session.post(f"{base_url}/code/create", headers=headers, json=data)
-    response_data = response.json()  # Use response.json() to parse JSON
-    logger.info(f"返回response.cookies: {response.cookies.get_dict()}")
-    # 提取值
+    response_data = response.json()
+
     secret_key = response_data["data"]["repData"]["secretKey"]
     token = response_data["data"]["repData"]["token"]
-
     bg_img_base64 = response_data["data"]["repData"]["originalImageBase64"]
     hk_img_base64 = response_data["data"]["repData"]["jigsawImageBase64"]
 
-    pos = getImgPos(bg_img_base64, hk_img_base64, scale_factor=400/310)
-
-    formatted_pos = pos
-
-    logger.info(f"pos文本: {formatted_pos}")
-
-    posStr = '{"x":' + str(formatted_pos*(310/400)) + ',"y":5}'
-    logger.info(f"posStr文本: {posStr}")
+    pos = getImgPos(bg_img_base64, hk_img_base64, scale_factor=400 / 310)
+    posStr = '{"x":' + str(pos * (310 / 400)) + ',"y":5}'
     pointJson = aes_encrypt(posStr, secret_key)
-
-    logger.info(f"加密后的文本pointJson_text: {pointJson}")
 
     pverdat = json.dumps({
         "captchaType": "blockPuzzle",
@@ -199,71 +186,42 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         "token": token,
         "ts": current_timestamp_milliseconds
     })
-    logger.info(f"图片检查传参: {pverdat}")
 
-    htm = session.post(f"{base_url}/code/check", json=json.loads(pverdat), headers=headers)  # Use json parameter
-    logger.info(f"返回htm_text: {htm.text}")
-    logger.info(f"返回htm.cookies: {htm.cookies.get_dict()}")
-    
-    if '执行成功' in htm.json()['msg']:
-        #time.sleep(3 + 2 * random.random())
-        
-        posStr = '{"x":' + str(formatted_pos*(310/400)) + ',"y":5}'
+    htm = session.post(f"{base_url}/code/check", json=json.loads(pverdat), headers=headers)
+
+    if '执行成功' in htm.json().get('msg', ''):
         captcha = aes_encrypt(token + '---' + posStr, secret_key)
-        logger.info(f"二次加密后的文本captcha_text: {captcha}")
-        decoded_captcha = aes_decrypt(captcha, secret_key)
-        logger.info(f"解码密文: {decoded_captcha}")
-        
+
         pverdat2 = json.dumps({
-            "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4=",
-            "username":"13487283013",
-            "password":"YCsmz@#Zhou88910440",
-            "grant_type":"password",
-            "scope":"server",
-            "code":captcha,
-            "randomStr":"blockPuzzle"
+            "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="
         })
-        logger.info(f"图片检查传参: {pverdat2}")
-        headers["Authorization"] = "Basic cGlnOnBpZw=="
-        headers["TENANT-ID"] = "1"
-    
-        #htm = session.get(f"{base_url}/auth/custom/token", data=pverdat2, headers=headers)
-        pverdat3 = json.dumps({
-            "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4=",
-            
-        })
-        logger.info(f"headers: {headers}")
-        htm = session.post(f"{base_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle", data=pverdat3, headers=headers)
-    
+        
+        htm = session.post(
+            f"{base_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
+            data=pverdat2,
+            headers=headers
+        )
+
         try:
-            logger.info(f"返回htm_text: {htm.text}")
-            access_token_value = htm.json()['access_token']
-            logger.info(f"返回access_token: {access_token_value}")
-    
-            # Create a dictionary with access_token and timestamp
-            access_token_data = {
-                'access_token': access_token_value,
-                'timestamp': int(time.time())  # Current timestamp in seconds
-            }
-    
-            # Write the dictionary to a local JSON file
-            with open('../access_token.json', 'w') as json_file:
-                json.dump(access_token_data, json_file)
-    
-        except KeyError:
-            pass
-        finally:
-            session.close()
+            access_token_value = htm.json().get('access_token')
+            if access_token_value:
+                logger.info(f"成功获取 access_token: {access_token_value}")
+
+                access_token_data = {
+                    'access_token': access_token_value,
+                    'timestamp': int(time.time())
+                }
+
+                with open('../access_token.json', 'w') as json_file:
+                    json.dump(access_token_data, json_file)
+
+                break  # 成功获取 access_token，退出循环
+        except Exception as e:
+            logger.error(f"尝试{attempt+1}失败: {str(e)}")
+            attempt += 1
+            time.sleep(random.uniform(1, 3))  # 已修复括号问题
+
+    else:
+        logger.critical("已达到最大重试次数")
 else:
-    # 获取当前时间戳
-    current_timestamp = time.time()
-
-    # 将时间戳转换为日期时间对象
-    current_datetime = datetime.fromtimestamp(current_timestamp)
-
-    # 将日期时间对象格式化为字符串
-    formatted_time = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
-    print('无需更新access_token验证。', formatted_time)
-
-    exit()
-
+    logger.info(f"Token仍有效，到期时间: {datetime.fromtimestamp(existing_ts+21600).strftime('%Y-%m-%d %H:%M:%S')}")
