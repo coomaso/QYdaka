@@ -152,7 +152,7 @@ existing_access_token, existing_timestamp = read_access_token()
 # Check if the access token is not present or if the timestamp difference is greater than 6 hours
 if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 60):
    while attempt < max_attempts:
-
+    attempt += 1
     logger.info(f"第 {attempt} 次尝试获取 access_token...")
 
     session = requests.session()
@@ -196,7 +196,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
 
     htm = session.post(
     f"{base_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
-    json={"sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="},  # 改成 json 传输
+    json={"sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="}, 
     headers=headers
     )
        
@@ -221,7 +221,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
             break  # 成功获取 access_token，退出循环
     except Exception as e:
         logger.error(f"尝试{attempt+1}失败: {str(e)}")
-        attempt += 1
+
         time.sleep(random.uniform(1, 3))  # 已修复括号问题
 
 else:
