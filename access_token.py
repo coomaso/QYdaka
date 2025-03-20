@@ -169,7 +169,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
 
     response = session.post(f"{base_url}/code/create", headers=headers, json=data)
     response_data = response.json()
-
+    logger.info(f"验证码参数 {response_data}")
     secret_key = response_data["data"]["repData"]["secretKey"]
     token = response_data["data"]["repData"]["token"]
     bg_img_base64 = response_data["data"]["repData"]["originalImageBase64"]
@@ -188,7 +188,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
     })
 
     htm = session.post(f"{base_url}/code/check", json=json.loads(pverdat), headers=headers)
-
+    logger.info(f"图形验证check回参 {htm.json()}")
     if '执行成功' in htm.json().get('msg', ''):
         captcha = aes_encrypt(token + '---' + posStr, secret_key)
 
