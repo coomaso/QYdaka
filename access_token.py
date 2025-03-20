@@ -169,7 +169,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
 
     response = session.post(f"{base_url}/code/create", headers=headers, json=data)
     response_data = response.json()
-    logger.info(f"验证码参数 {response_data}")
+
     secret_key = response_data["data"]["repData"]["secretKey"]
     token = response_data["data"]["repData"]["token"]
     bg_img_base64 = response_data["data"]["repData"]["originalImageBase64"]
@@ -178,7 +178,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
     pos = getImgPos(bg_img_base64, hk_img_base64, scale_factor=400 / 310)
     posStr = '{"x":' + str(pos * (310 / 400)) + ',"y":5}'
     pointJson = aes_encrypt(posStr, secret_key)
-
+    logger.info(f"pointJson {pointJson}")
     pverdat = json.dumps({
         "captchaType": "blockPuzzle",
         "clientUid": clientUUID,
