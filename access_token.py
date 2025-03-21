@@ -139,14 +139,17 @@ def resize_image(base64_string, new_width):
 
  return resized_base64
 
-# Function to read the existing access token and timestamp from access_token.json
+# 读取 access_token.json 文件
 def read_access_token():
- try:
-     with open(TOKEN_file, 'r') as json_file:
-         data = json.load(json_file)
-         return data.get('access_token'), data.get('timestamp', 0)
- except FileNotFoundError:
-     return None, 0
+    try:
+        with open(TOKEN_file, 'r') as json_file:
+            content = json_file.read().strip()  # 读取内容并去除空格
+            if not content:  # 如果文件为空
+                return None, 0
+            data = json.loads(content)  # 解析 JSON
+            return data.get('access_token'), data.get('timestamp', 0)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None, 0  # 发生错误时返回 None
 
 
 # 读取 access_token
