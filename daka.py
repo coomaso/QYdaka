@@ -217,7 +217,7 @@ def get_login(access_token_value):
                     XMB_NAME = item['sgxkName']
                     XMB_ID = item['sgxkId']
                     XMB_KEY = item['workOrderId']
-                    XMB = get_ppname(access_token, XMB_ID, XMB_KEY)
+                    XMB = get_ppname(access_token_value, XMB_ID, XMB_KEY)
                     current_time = (datetime.datetime.now() + datetime.timedelta(hours=8)).strftime("%m-%d %H:%M")
                     content = (
                         f'## 考勤提示:<font color=\"info\">{XMB_NAME}</font>{current_time}\n'
