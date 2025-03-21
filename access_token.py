@@ -38,9 +38,9 @@ headers = {
 }
 
 def get_token_path():
-    """获取与脚本同目录的token文件路径"""
-    script_dir = Path(__file__).resolve().parent
-    return script_dir / "access_token.json"
+    """定位到项目根目录的access_token.json"""
+    project_root = Path(__file__).resolve().parent.parent  # 根据实际目录结构调整.parent次数
+    return project_root / "access_token.json"
  
 def ensure_directory_exists(file_path):
     """确保文件所在目录存在"""
