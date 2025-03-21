@@ -1,9 +1,217 @@
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import base64
 import requests
 import json
-import time
-import datetime
-import os
 import random
+from loguru import logger
+import cv2
+import numpy as np
+import os
+from PIL import Image
+from pathlib import Path
+import io
+import time
+from datetime import datetime
+
+max_attempts = 20  # 最大尝试次数
+attempt = 0  # 计数器
+
+BASE_url = "https://zhcjsmz.sc.yichang.gov.cn"
+
+
+headers = {
+ "Host": "zhcjsmz.sc.yichang.gov.cn",
+ "Connection": "keep-alive",
+ "sec-ch-ua": '"Not.A/Brand";v="8", "Chromium";v="114"',
+ "Accept": "*/*",
+ "Content-Type": "application/json;charset=UTF-8",
+ "sec-ch-ua-mobile": "?0",
+ "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.289 Safari/537.36",
+ "sec-ch-ua-platform": '"Windows"',
+ "Origin": "https://zhcjsmz.sc.yichang.gov.cn",
+ "Referer": "https://zhcjsmz.sc.yichang.gov.cn/login/",
+ "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,vi;q=0.7",
+ "Accept-Encoding": "gzip, deflate",
+ "Authorization": "Basic cGlnOnBpZw=="
+}
+
+def get_script_dir():
+    """获取脚本所在的绝对目录路径"""
+    script_path = Path(__file__).resolve()  # 解析符号链接（如果有）
+    return script_path.parent
+ 
+# 获取脚本当前目录
+script_dir = get_script_dir()
+token_path = script_dir / "access_token.json"
+logger.info(f"Token文件存储路径: {token_path}")
+# 加密函数
+def aes_encrypt(word, key_word):
+ key = bytes(key_word, 'utf-8')
+ srcs = bytes(word, 'utf-8')
+ cipher = AES.new(key, AES.MODE_ECB)
+ encrypted = cipher.encrypt(pad(srcs, AES.block_size))
+ return base64.b64encode(encrypted).decode('utf-8')
+
+def aes_decrypt(ciphertext, key_word):
+ key = bytes(key_word, 'utf-8')
+ ciphertext = base64.b64decode(ciphertext)
+ cipher = AES.new(key, AES.MODE_ECB)
+ decrypted = unpad(cipher.decrypt(ciphertext), AES.block_size)
+ return decrypted.decode('utf-8')
+
+# 初始化 UUID
+def generate_client_uuid():
+ s = []
+ hex_digits = "0123456789abcdef"
+ for i in range(36):
+     s.append(hex_digits[random.randint(0, 15)])
+ s[14] = "4"  # time_hi_and_version字段的12-15位设置为0010
+ s[19] = hex_digits[(int(s[19], 16) & 0x3) | 0x8]  # clock_seq_hi_and_reserved字段的6-7位设置为01
+ s[8] = s[13] = s[18] = s[23] = "-"
+ return 'slider-' + ''.join(s)
+
+# 获取图片函数
+def getImgPos(bg, tp, scale_factor):
+ '''
+ bg: 背景图片
+ tp: 缺口图片
+ out:输出图片
+ '''
+ # 解码Base64字符串为字节对象
+ bg = base64.b64decode(bg)
+ tp = base64.b64decode(tp)
+
+ # 读取背景图片和缺口图片
+ bg_img = cv2.imdecode(np.frombuffer(bg, np.uint8), cv2.IMREAD_COLOR) # 背景图片
+ tp_img = cv2.imdecode(np.frombuffer(tp, np.uint8), cv2.IMREAD_COLOR)  # 缺口图片
+
+ # 对图像进行缩放
+ bg_img = cv2.resize(bg_img, (0, 0), fx=scale_factor, fy=scale_factor)
+ tp_img = cv2.resize(tp_img, (0, 0), fx=scale_factor, fy=scale_factor)
+
+ # 识别图片边缘
+ bg_edge = cv2.Canny(bg_img, 50, 400)
+ tp_edge = cv2.Canny(tp_img, 50, 400)
+
+ # 转换图片格式
+ bg_pic = cv2.cvtColor(bg_edge, cv2.COLOR_GRAY2RGB)
+ tp_pic = cv2.cvtColor(tp_edge, cv2.COLOR_GRAY2RGB)
+
+ # 缺口匹配
+ res = cv2.matchTemplate(bg_pic, tp_pic, cv2.TM_CCOEFF_NORMED)
+ _, _, _, max_loc = cv2.minMaxLoc(res)  # 寻找最优匹配
+
+ # 缩放坐标
+ #scaled_max_loc = (max_loc[0] * scale_factor, max_loc[1] * scale_factor)
+
+ # 绘制方框
+ th, tw = tp_pic.shape[:2]
+ tl = max_loc  # 左上角点的坐标
+ br = (tl[0] + tw, tl[1] + th)  # 右下角点的坐标
+ cv2.rectangle(bg_img, (int(tl[0]), int(tl[1])), (int(br[0]), int(br[1])), (0, 0, 255), 2)  # 绘制矩形
+
+ # 保存至本地
+ output_path = os.path.join(os.getcwd(), "output_imageX.jpg")
+ cv2.imwrite(output_path, bg_img)
+ tp_img_path = os.path.join(os.getcwd(), "tp_imgX.jpg")
+ cv2.imwrite(tp_img_path, tp_img)
+
+ logger.info(f"缺口的X坐标: {max_loc[0]:.4f}")
+
+ # 返回缺口的X坐标
+ return max_loc[0] - 2.5
+
+# 接受原始图像的Base64编码字符串和新的宽度作为参数，返回调整大小后的图像的Base64编码字符串
+def resize_image(base64_string, new_width):
+ # 将Base64字符串解码为字节数据
+ image_data = base64.b64decode(base64_string)
+
+ # 将字节数据转换为图像对象
+ image = Image.open(io.BytesIO(image_data))
+
+ # 确保图像的模式是RGB
+ if image.mode != 'RGB':
+     image = image.convert('RGB')
+
+ # 计算高度以保持宽高比
+ original_width, original_height = image.size
+ new_height = int((new_width / original_width) * original_height)
+
+ # 调整图像大小
+ resized_image = image.resize((new_width, new_height))
+
+ # 将调整大小后的图像转换为Base64字符串
+ buffered = io.BytesIO()
+ resized_image.save(buffered, format="JPEG")
+ resized_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+ return resized_base64
+
+# 读取 access_token.json 文件
+def read_access_token():
+    try:
+        token_path = get_script_dir() / "access_token.json"
+        
+        # 确保目录存在（使用正确路径）
+        token_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        if not token_path.exists():
+            return None, 0
+            
+        with token_path.open('r') as f:
+            data = json.load(f)
+            return data.get('access_token'), data.get('timestamp', 0)
+    except Exception as e:
+        logger.error(f"读取token失败: {str(e)}")
+        return None, 0
+     
+# 保存 access_token.json 文件
+def save_access_token(token):
+    """安全保存access_token到脚本同级目录"""
+    try:
+        target_path = get_script_dir() / "access_token.json"
+        
+        # 确保目录存在
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # 写入文件（使用Path对象操作）
+        with target_path.open('w') as f:
+            json.dump({
+                "access_token": token,
+                "timestamp": int(time.time())
+            }, f, indent=2)
+            
+        # 设置安全权限（兼容Path对象）
+        if os.name == 'posix':
+            os.chmod(str(target_path), 0o600)  # 转换为字符串
+            
+        logger.success(f"Token成功保存至: {target_path}")
+        return True
+        
+    except PermissionError as pe:
+        logger.error(f"权限不足: {str(pe)}")
+        try:
+            # 尝试修复权限
+            os.chmod(str(target_path.parent), 0o755)
+            if target_path.exists():
+                os.chmod(str(target_path), 0o600)
+            with target_path.open('w') as f:
+                json.dump({
+                    "access_token": token,
+                    "timestamp": int(time.time())
+                }, f, indent=2)
+            logger.warning("通过权限修复完成写入")
+            return True
+        except Exception as e:
+            logger.critical(f"最终写入失败: {str(e)}")
+            raise
+    except Exception as e:
+        logger.error(f"其他保存错误: {str(e)}")
+        raise
+     
+
+
 
 login_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngsPageByUser"
 getActivity_url = "https://zhcjsmz.sc.yichang.gov.cn/auth/oauth/token"
@@ -25,48 +233,6 @@ def send_wexinqq_md(webhook, content):
     }
     data = json.dumps(alarm)
     requests.post(url=webhook, data=data, headers=header)
-
-#远程获取access_token.json
-def get_access_token():
-    try:
-        url = 'https://bimcn.co/bid/SHIMING/access_token.json'
-        response = requests.get(url)
-
-        # Check if the request was successful (status code 200)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get('access_token')
-        else:
-            print(f"Failed to fetch access token. Status code: {response.status_code}")
-            return None
-
-    except requests.RequestException as e:
-        # Handle network or request-related errors
-        print(f"Error fetching access token: {e}")
-        return None
-    except json.JSONDecodeError:
-        # Handle the case where the response content is not valid JSON
-        print(f"Error decoding JSON in the response")
-        return None
-
-def update_access_token():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_name = 'access_token.json'
-    file_path = os.path.join(current_dir, file_name)
-    
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-        access_token = data.get('access_token')
-        current_time = data.get('current_time')
-    
-    expiration_time = float(current_time) + 1800
-    
-    if expiration_time < datetime.datetime.now().timestamp():
-        new_access_token = get_access_token()
-        with open(file_path, 'w') as file:
-            json.dump({'access_token': new_access_token, 'current_time': datetime.datetime.now().timestamp()}, file)
-    else:
-        return access_token
 
 def GESHIHUAXMB_QUE_NAME(data):
     if data:
@@ -105,7 +271,7 @@ def format_result(data):
         result += f">{project}:<font color=\"warning\">@{names}</font>\n"
     return result
 
-def get_login():
+def get_login(access_token_value):
     try:
         access_token = get_access_token()
     except KeyError:
@@ -147,4 +313,116 @@ def get_login():
         time.sleep(3 + 2 * random.random())
         page += 1
 
-get_login()
+# 读取 access_token
+existing_access_token, existing_timestamp = read_access_token()
+
+# 判断 access_token 是否过期（6 小时）
+if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 60):
+    logger.info("需要刷新Token")
+    success = False
+    while attempt < max_attempts and not success:
+        attempt += 1
+        logger.info(f"第 {attempt} 次尝试获取 access_token...")
+
+        session = requests.session()
+        response = session.get("https://zhcjsmz.sc.yichang.gov.cn/login/#/login", headers=headers)
+        
+        # 解析 Cookie
+        cookies_dict = requests.utils.dict_from_cookiejar(session.cookies)
+        session.cookies.update(cookies_dict)
+
+        clientUUID = generate_client_uuid()
+        current_timestamp_milliseconds = round(time.time() * 1000)
+
+        data = {
+            "captchaType": "blockPuzzle",
+            "clientUid": clientUUID,
+            "ts": current_timestamp_milliseconds
+        }
+
+        # 获取 API 响应
+        response = session.post(f"{BASE_url}/code/create", headers=headers, json=data)
+        
+        # 先检查状态码
+        if response.status_code != 200:
+            logger.error(f"API 请求失败，状态码: {response.status_code}, 响应内容: {response.text}")
+            raise ValueError("API 请求失败，请检查请求参数或服务器状态")
+        
+        # 尝试解析 JSON
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError as e:
+            logger.error(f"解析 JSON 失败，响应内容: {response.text}, 错误信息: {str(e)}")
+            raise ValueError("API 返回的不是有效的 JSON 数据")
+        
+        # 确保 response_data 不是 None
+        if not response_data:
+            logger.error(f"API 返回空数据，响应内容: {response.text}")
+            raise ValueError("API 返回的数据为空")
+        
+        # 确保 response_data 结构正确
+        if "data" not in response_data or "repData" not in response_data["data"]:
+            logger.error(f"API 返回的数据格式不正确: {response_data}")
+            raise ValueError("API 返回的数据缺少 'data' 或 'repData' 字段")
+        
+        # 解析数据
+        secret_key = response_data["data"]["repData"]["secretKey"]
+        token = response_data["data"]["repData"]["token"]
+        bg_img_base64 = response_data["data"]["repData"]["originalImageBase64"]
+        hk_img_base64 = response_data["data"]["repData"]["jigsawImageBase64"]
+
+
+        pos = getImgPos(bg_img_base64, hk_img_base64, scale_factor=400 / 310)
+        posStr = '{"x":' + str(pos * (310 / 400)) + ',"y":5}'
+        pointJson = aes_encrypt(posStr, secret_key)
+        logger.info(f"pointJson {pointJson}")
+        
+        pverdat = json.dumps({
+            "captchaType": "blockPuzzle",
+            "clientUid": clientUUID,
+            "pointJson": pointJson,
+            "token": token,
+            "ts": current_timestamp_milliseconds
+        })
+
+        htm = session.post(f"{BASE_url}/code/check", json=json.loads(pverdat), headers=headers)
+        logger.info(f"图形验证check回参 {htm.json()}")
+
+        captcha = aes_encrypt(token + '---' + posStr, secret_key)
+        logger.info(f"加密后的 captcha: {captcha}")
+
+        data = {
+            "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="
+        }
+        headers["Content-Type"] = "application/json"
+
+        htm = session.post(
+            f"{BASE_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
+            json=data, 
+            headers=headers
+        )
+
+        logger.info(f"请求返回状态码: {htm.status_code}, 返回内容: {htm.text}")
+
+        try:
+            response_json = htm.json()
+            logger.info(f"返回 JSON: {response_json}")  
+            access_token_value = response_json.get('access_token')
+
+            if access_token_value:
+                if save_access_token(access_token_value):
+                    logger.info(f"第{attempt}次尝试成功")
+                    success = True
+                    break
+        except Exception as e:
+            logger.error(f"尝试{attempt}失败: {str(e)}")
+            time.sleep(random.uniform(1, 10))
+    
+    if not success:
+        logger.critical("达到最大尝试次数仍失败")
+        exit(1)
+
+else:
+    logger.info(f"Token 仍有效，到期时间: {datetime.fromtimestamp(existing_timestamp + 21600).strftime('%Y-%m-%d %H:%M:%S')}")
+
+get_login(access_token_value)
