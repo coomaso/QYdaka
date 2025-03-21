@@ -19,8 +19,7 @@ attempt = 0  # 计数器
 
 BASE_url = "https://zhcjsmz.sc.yichang.gov.cn"
 # 获取脚本当前目录
-script_dir = Path(__file__).parent
-TOKEN_file = script_dir / "access_token.json"
+TOKEN_file = Path("/tmp/access_token.json")
 
 headers = {
  "Host": "zhcjsmz.sc.yichang.gov.cn",
