@@ -12,7 +12,7 @@ from PIL import Image
 from pathlib import Path
 import io
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 max_attempts = 20  # 最大尝试次数
 attempt = 0  # 计数器
