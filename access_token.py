@@ -18,7 +18,9 @@ max_attempts = 20  # 最大尝试次数
 attempt = 0  # 计数器
 
 BASE_url = "https://zhcjsmz.sc.yichang.gov.cn"
-TOKEN_file = Path(os.getcwd()) / "access_token.json"
+# 获取脚本当前目录
+script_dir = Path(__file__).parent
+TOKEN_file = script_dir / "access_token.json"
 
 headers = {
  "Host": "zhcjsmz.sc.yichang.gov.cn",
