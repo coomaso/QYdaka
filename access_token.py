@@ -18,9 +18,7 @@ max_attempts = 20  # 最大尝试次数
 attempt = 0  # 计数器
 
 BASE_url = "https://zhcjsmz.sc.yichang.gov.cn"
-# 获取脚本当前目录
-script_dir = get_script_dir()
-token_path = script_dir / "access_token.json"
+
 
 headers = {
  "Host": "zhcjsmz.sc.yichang.gov.cn",
@@ -42,6 +40,10 @@ def get_script_dir():
     """获取脚本所在的绝对目录路径"""
     script_path = Path(__file__).resolve()  # 解析符号链接（如果有）
     return script_path.parent
+ 
+# 获取脚本当前目录
+script_dir = get_script_dir()
+token_path = script_dir / "access_token.json"
 
 # 加密函数
 def aes_encrypt(word, key_word):
