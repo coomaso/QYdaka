@@ -180,6 +180,11 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         # 获取 API 响应
         response = session.post(f"{BASE_url}/code/create", headers=headers, json=data)
         
+        # 先检查状态码
+        if response.status_code != 200:
+            logger.error(f"API 请求失败，状态码: {response.status_code}, 响应内容: {response.text}")
+            raise ValueError("API 请求失败，请检查请求参数或服务器状态")
+        
         # 尝试解析 JSON
         try:
             response_data = response.json()
@@ -202,6 +207,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         token = response_data["data"]["repData"]["token"]
         bg_img_base64 = response_data["data"]["repData"]["originalImageBase64"]
         hk_img_base64 = response_data["data"]["repData"]["jigsawImageBase64"]
+
 
         pos = getImgPos(bg_img_base64, hk_img_base64, scale_factor=400 / 310)
         posStr = '{"x":' + str(pos * (310 / 400)) + ',"y":5}'
