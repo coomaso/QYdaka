@@ -31,6 +31,7 @@ headers = {
     "Referer": "https://zhcjsmz.sc.yichang.gov.cn/login/",
     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,vi;q=0.7",
     "Accept-Encoding": "gzip, deflate",
+    "Authorization": "Basic cGlnOnBpZw=="
 }
 
 # 加密函数
@@ -206,11 +207,12 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         "randomStr": "blockPuzzle",
         "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="
     }
-    
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
+
     # 发送 POST 请求
     htm = session.post(
         f"{base_url}/auth/custom/token",
-        json=payload,  # 以 JSON 方式提交
+        data=payload,  # 以 data 方式提交
         headers=headers
     )
 
