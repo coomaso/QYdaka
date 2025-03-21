@@ -44,7 +44,7 @@ def get_script_dir():
 # 获取脚本当前目录
 script_dir = get_script_dir()
 token_path = script_dir / "access_token.json"
-
+logger.info(f"Token文件存储路径: {token_path}")
 # 加密函数
 def aes_encrypt(word, key_word):
  key = bytes(key_word, 'utf-8')
