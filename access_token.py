@@ -177,9 +177,16 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
             "ts": current_timestamp_milliseconds
         }
 
+        # 获取 API 响应
         response = session.post(f"{BASE_url}/code/create", headers=headers, json=data)
         response_data = response.json()
-
+        
+        # 检查 API 是否返回正确的数据
+        if not response_data or "data" not in response_data or "repData" not in response_data["data"]:
+            logger.error(f"API 响应异常: {response_data}")  # 记录错误日志
+            raise ValueError("API 返回的数据格式不正确，缺少 'data' 或 'repData' 字段")
+        
+        # 解析数据
         secret_key = response_data["data"]["repData"]["secretKey"]
         token = response_data["data"]["repData"]["token"]
         bg_img_base64 = response_data["data"]["repData"]["originalImageBase64"]
