@@ -199,23 +199,15 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
        
 
     # 重新构造 JSON 请求体，避免在 URL 里传递参数
-    payload = {
-        "username": "13487283013",
-        "grant_type": "password",
-        "scope": "server",
-        "code": captcha,
-        "randomStr": "blockPuzzle",
+    data = {
         "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="
     }
-    headers["Content-Type"] = "application/x-www-form-urlencoded"
-
-    # 发送 POST 请求
+    
     htm = session.post(
-        f"{base_url}/auth/custom/token",
-        data=payload,  # 以 data 方式提交
+        f"{base_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
+        json=data, 
         headers=headers
     )
-
        
     logger.info(f"请求返回状态码: {htm.status_code}, 返回内容: {htm.text}")
 
