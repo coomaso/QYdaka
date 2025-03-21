@@ -149,11 +149,10 @@ def resize_image(base64_string, new_width):
 # 读取 access_token.json 文件
 def read_access_token():
     try:
-        # 获取目标路径     
         token_path = get_script_dir() / "access_token.json"
-     
-        # 确保目录存在
-        target_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # 确保目录存在（使用正确路径）
+        token_path.parent.mkdir(parents=True, exist_ok=True)
         
         if not token_path.exists():
             return None, 0
@@ -169,27 +168,44 @@ def read_access_token():
 def save_access_token(token):
     """安全保存access_token到脚本同级目录"""
     try:
-        # 获取目标路径
         target_path = get_script_dir() / "access_token.json"
         
         # 确保目录存在
         target_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 写入文件
-        with open(target_path, 'w') as f:
+        # 写入文件（使用Path对象操作）
+        with target_path.open('w') as f:
             json.dump({
                 "access_token": token,
                 "timestamp": int(time.time())
             }, f, indent=2)
             
-        # 设置安全权限（仅Linux）
+        # 设置安全权限（兼容Path对象）
         if os.name == 'posix':
-            os.chmod(target_path, 0o600)  # 仅允许所有者读写
+            os.chmod(str(target_path), 0o600)  # 转换为字符串
             
         logger.success(f"Token成功保存至: {target_path}")
+        return True
         
+    except PermissionError as pe:
+        logger.error(f"权限不足: {str(pe)}")
+        try:
+            # 尝试修复权限
+            os.chmod(str(target_path.parent), 0o755)
+            if target_path.exists():
+                os.chmod(str(target_path), 0o600)
+            with target_path.open('w') as f:
+                json.dump({
+                    "access_token": token,
+                    "timestamp": int(time.time())
+                }, f, indent=2)
+            logger.warning("通过权限修复完成写入")
+            return True
+        except Exception as e:
+            logger.critical(f"最终写入失败: {str(e)}")
+            raise
     except Exception as e:
-        logger.error(f"保存Token失败: {str(e)}")
+        logger.error(f"其他保存错误: {str(e)}")
         raise
      
 # 读取 access_token
@@ -197,7 +213,9 @@ existing_access_token, existing_timestamp = read_access_token()
 
 # 判断 access_token 是否过期（6 小时）
 if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 60):
-    while attempt < max_attempts:  # 这里缩进
+    logger.info("需要刷新Token")
+    success = False
+    while attempt < max_attempts and not success:
         attempt += 1
         logger.info(f"第 {attempt} 次尝试获取 access_token...")
 
@@ -287,14 +305,17 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
             access_token_value = response_json.get('access_token')
 
             if access_token_value:
-                logger.info(f"成功获取 access_token: {access_token_value}")
-                save_access_token(access_token_value)
-                logger.info(f"Token文件存储路径: {get_token_path()}")
-                break  # 成功获取 access_token，退出循环
+                if save_access_token(access_token_value):
+                    logger.info(f"第{attempt}次尝试成功")
+                    success = True
+                    break
         except Exception as e:
-            logger.error(f"尝试 {attempt} 失败: {str(e)}")
-
-            time.sleep(random.uniform(1, 10))  
+            logger.error(f"尝试{attempt}失败: {str(e)}")
+            time.sleep(random.uniform(1, 10))
+    
+    if not success:
+        logger.critical("达到最大尝试次数仍失败")
+        exit(1)
 
 else:
     logger.info(f"Token 仍有效，到期时间: {datetime.fromtimestamp(existing_timestamp + 21600).strftime('%Y-%m-%d %H:%M:%S')}")
