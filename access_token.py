@@ -157,7 +157,10 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
 
     session = requests.session()
     response = session.get("https://zhcjsmz.sc.yichang.gov.cn/login/#/login", headers=headers)
-
+    # 手动获取 Cookie 并设置
+    cookies_dict = requests.utils.dict_from_cookiejar(session.cookies)
+    session.cookies.update(cookies_dict)
+       
     clientUUID = generate_client_uuid()
     current_timestamp_milliseconds = round(time.time() * 1000)
 
