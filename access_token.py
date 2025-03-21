@@ -12,7 +12,8 @@ from PIL import Image
 import io
 import time
 from datetime import datetime
- 
+from pathlib import Path
+
 # 全局配置常量
 CONFIG = {
     "base_url": "https://zhcjsmz.sc.yichang.gov.cn",
