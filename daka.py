@@ -211,23 +211,26 @@ def get_login(access_token_value):
         url = f'{login_url}?limit=10&page={page}'        
         try:
             response_list = requests.get(url=url, headers=headers).json()
-        except KeyError:
-        pages = response_list['data']['pages']
-        for item in response_list['data']['records']:
-            if item['isFinish'] == '否':
-                XMB_NAME = item['sgxkName']
-                XMB_ID = item['sgxkId']
-                XMB_KEY = item['workOrderId']
-                XMB = get_ppname(access_token, XMB_ID, XMB_KEY)
-                current_time = (datetime.datetime.now() + datetime.timedelta(hours=8)).strftime("%m-%d %H:%M")
-                content = (
-                    f'## 考勤提示:<font color=\"info\">{XMB_NAME}</font>{current_time}\n'
-                    f">**<font color=\"warning\">缺勤人员:{str(GESHIHUAXMB_QUE_NAME(XMB['QUE']))}</font>**\n"
-                    f">请假人员:<font color=\"comment\">{str(GESHIHUAXMB_QUE_NAME(XMB['JIA']))}</font>\n"
-                    f">完成人员:<font color=\"comment\">{str(GESHIHUAXMB_QUE_NAME(XMB['OK']))}</font>\n"
-                )
-                send_wexinqq_md(wexinqq_url, content)
-                time.sleep(3 + 2 * random.random())
+            pages = response_list['data']['pages']
+            for item in response_list['data']['records']:
+                if item['isFinish'] == '否':
+                    XMB_NAME = item['sgxkName']
+                    XMB_ID = item['sgxkId']
+                    XMB_KEY = item['workOrderId']
+                    XMB = get_ppname(access_token, XMB_ID, XMB_KEY)
+                    current_time = (datetime.datetime.now() + datetime.timedelta(hours=8)).strftime("%m-%d %H:%M")
+                    content = (
+                        f'## 考勤提示:<font color=\"info\">{XMB_NAME}</font>{current_time}\n'
+                        f">**<font color=\"warning\">缺勤人员:{str(GESHIHUAXMB_QUE_NAME(XMB['QUE']))}</font>**\n"
+                        f">请假人员:<font color=\"comment\">{str(GESHIHUAXMB_QUE_NAME(XMB['JIA']))}</font>\n"
+                        f">完成人员:<font color=\"comment\">{str(GESHIHUAXMB_QUE_NAME(XMB['OK']))}</font>\n"
+                    )
+                    send_wexinqq_md(wexinqq_url, content)
+                    time.sleep(3 + 2 * random.random())
+        except KeyError as e:
+            logger.error(f"数据解析错误: {e}")
+        except requests.RequestException as e:
+            logger.error(f"请求失败: {e}")             
         time.sleep(3 + 2 * random.random())
         page += 1
 
