@@ -244,7 +244,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         except Exception as e:
             logger.error(f"尝试 {attempt} 失败: {str(e)}")
 
-            time.sleep(random.uniform(1, 3))  
+            time.sleep(random.uniform(1, 10))  
 
 else:
     logger.info(f"Token 仍有效，到期时间: {datetime.fromtimestamp(existing_timestamp + 21600).strftime('%Y-%m-%d %H:%M:%S')}")
