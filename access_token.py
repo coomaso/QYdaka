@@ -46,6 +46,51 @@ def ensure_directory_exists(file_path):
     """确保文件所在目录存在"""
     file_path.parent.mkdir(parents=True, exist_ok=True) 
 
+def verify_permissions(file_path):
+    """验证并打印文件权限"""
+    try:
+        current_mode = os.stat(file_path).st_mode
+        readable = os.access(file_path, os.R_OK)
+        writable = os.access(file_path, os.W_OK)
+        
+        logger.info(f"文件权限: {oct(stat.S_IMODE(current_mode))}")
+        logger.info(f"可读: {readable}, 可写: {writable}")
+        
+        return writable
+    except Exception as e:
+        logger.error(f"权限验证失败: {str(e)}")
+        return False
+
+def safe_write_token(token):
+    """带权限验证的写入操作"""
+    token_path = Path("/home/runner/work/bid/access_token.json")
+    
+    try:
+        # 尝试直接写入
+        with token_path.open('w') as f:
+            json.dump({'token': token}, f)
+        logger.success("直接写入成功")
+        
+    except PermissionError:
+        logger.warning("检测到权限不足，尝试修复...")
+        
+        try:
+            # 临时修改权限（仅用于调试）
+            token_path.parent.mkdir(parents=True, exist_ok=True)
+            os.chmod(str(token_path.parent), 0o777)
+            if not token_path.exists():
+                token_path.touch()
+            os.chmod(str(token_path), 0o777)
+            
+            # 再次尝试写入
+            with token_path.open('w') as f:
+                json.dump({'token': token}, f)
+            logger.success("权限修复后写入成功")
+            
+        except Exception as e:
+            logger.critical(f"最终写入失败: {str(e)}")
+            raise
+
 # 加密函数
 def aes_encrypt(word, key_word):
  key = bytes(key_word, 'utf-8')
