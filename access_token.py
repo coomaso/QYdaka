@@ -16,12 +16,11 @@ from datetime import datetime
 # 全局配置常量
 CONFIG = {
     "base_url": "https://zhcjsmz.sc.yichang.gov.cn",
-    "token_file": Path(os.path.expanduser("~/access_token.json")),
     "max_attempts": 20,  # 最大尝试次数
 }
 
 base_url = CONFIG["base_url"]
-token_file = CONFIG["token_file"]
+token_file = Path(os.getcwd()) / "access_token.json"
  
  headers = {
      "Host": "zhcjsmz.sc.yichang.gov.cn",
