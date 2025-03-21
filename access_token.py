@@ -197,11 +197,23 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
     logger.info(f"加密后的 captcha: {captcha}")
        
 
+    # 重新构造 JSON 请求体，避免在 URL 里传递参数
+    payload = {
+        "username": "13487283013",
+        "grant_type": "password",
+        "scope": "server",
+        "code": captcha,
+        "randomStr": "blockPuzzle",
+        "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="
+    }
+    
+    # 发送 POST 请求
     htm = session.post(
-    f"{base_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
-    json={"sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="}, 
-    headers=headers
+        f"{base_url}/auth/custom/token",
+        json=payload,  # 以 JSON 方式提交
+        headers=headers
     )
+
        
     logger.info(f"请求返回状态码: {htm.status_code}, 返回内容: {htm.text}")
 
