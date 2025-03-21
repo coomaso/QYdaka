@@ -173,7 +173,7 @@ def get_ppname(access_token, XMB_ID, XMB_KEY):
         "host": "zhcjsmz.sc.yichang.gov.cn",
         "Referer": "https://zhcjsmz.sc.yichang.gov.cn/cyrygl/"
     }
-    JobCheckurl = f'https://zhcjsmz.sc.yichang.gov.cn/laboratt/statisticsManager/getGlgwJobIsCheck?engId={XMB_ID}&workId={XMB_KEY}&checkDay={datetime.datetime.now().strftime("%Y-%m-%d")}'
+    JobCheckurl = f'https://zhcjsmz.sc.yichang.gov.cn/laboratt/statisticsManager/getGlgwJobIsCheck?engId={XMB_ID}&workId={XMB_KEY}&checkDay={datetime.now().strftime("%Y-%m-%d")}'
     response_name = requests.get(url=JobCheckurl, headers=headers).json()
     
     NAME = {"OK": [], "QUE": [], "JIA": []}
