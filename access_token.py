@@ -37,6 +37,15 @@ headers = {
  "Authorization": "Basic cGlnOnBpZw=="
 }
 
+def get_token_path():
+    """获取与脚本同目录的token文件路径"""
+    script_dir = Path(__file__).resolve().parent
+    return script_dir / "access_token.json"
+ 
+def ensure_directory_exists(file_path):
+    """确保文件所在目录存在"""
+    file_path.parent.mkdir(parents=True, exist_ok=True) 
+
 # 加密函数
 def aes_encrypt(word, key_word):
  key = bytes(key_word, 'utf-8')
@@ -143,16 +152,39 @@ def resize_image(base64_string, new_width):
 # 读取 access_token.json 文件
 def read_access_token():
     try:
-        with open(TOKEN_file, 'r') as json_file:
-            content = json_file.read().strip()  # 读取内容并去除空格
-            if not content:  # 如果文件为空
-                return None, 0
-            data = json.loads(content)  # 解析 JSON
+        token_path = get_token_path()
+        ensure_directory_exists(token_path)
+        
+        if not token_path.exists():
+            return None, 0
+            
+        with token_path.open('r') as f:
+            data = json.load(f)
             return data.get('access_token'), data.get('timestamp', 0)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return None, 0  # 发生错误时返回 None
-
-
+    except Exception as e:
+        logger.error(f"读取token失败: {str(e)}")
+        return None, 0
+     
+# 保存 access_token.json 文件
+def save_access_token(token):
+    try:
+        token_path = get_token_path()
+        ensure_directory_exists(token_path)
+        
+        data = {
+            'access_token': token,
+            'timestamp': int(time.time())
+        }
+        
+        with token_path.open('w') as f:
+            json.dump(data, f)
+            
+        if os.name == 'posix':
+            os.chmod(str(token_path), 0o600)
+            
+    except Exception as e:
+        logger.error(f"保存token失败: {str(e)}")
+     
 # 读取 access_token
 existing_access_token, existing_timestamp = read_access_token()
 
@@ -249,15 +281,8 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
 
             if access_token_value:
                 logger.info(f"成功获取 access_token: {access_token_value}")
-
-                access_token_data = {
-                    'access_token': access_token_value,
-                    'timestamp': int(time.time())
-                }
-
-                with open(TOKEN_file, 'w') as json_file:
-                    json.dump(access_token_data, json_file)
-
+                save_access_token(access_token_value)
+                logger.info(f"Token文件存储路径: {get_token_path()}")
                 break  # 成功获取 access_token，退出循环
         except Exception as e:
             logger.error(f"尝试 {attempt} 失败: {str(e)}")
