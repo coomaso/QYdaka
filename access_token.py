@@ -149,21 +149,19 @@ def read_access_token():
      return None, 0
 
 
-# Read the existing access token and timestamp
+# 读取 access_token
 existing_access_token, existing_timestamp = read_access_token()
 
-# Check if the access token is not present or if the timestamp difference is greater than 6 hours
+# 判断 access_token 是否过期（6 小时）
 if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 60):
-# Check if the access token is not present or if the timestamp difference is greater than 6 hours
-if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 60):
-    while attempt < max_attempts:  # ✅ 这里需要正确缩进
+    while attempt < max_attempts:  # 这里缩进
         attempt += 1
         logger.info(f"第 {attempt} 次尝试获取 access_token...")
 
         session = requests.session()
         response = session.get("https://zhcjsmz.sc.yichang.gov.cn/login/#/login", headers=headers)
         
-        # 手动获取 Cookie 并设置
+        # 解析 Cookie
         cookies_dict = requests.utils.dict_from_cookiejar(session.cookies)
         session.cookies.update(cookies_dict)
 
@@ -234,9 +232,9 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
 
                 break  # 成功获取 access_token，退出循环
         except Exception as e:
-            logger.error(f"尝试{attempt+1}失败: {str(e)}")
+            logger.error(f"尝试 {attempt} 失败: {str(e)}")
 
             time.sleep(random.uniform(1, 3))  
 
 else:
-    logger.info(f"Token仍有效，到期时间: {datetime.fromtimestamp(existing_timestamp + 21600).strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"Token 仍有效，到期时间: {datetime.fromtimestamp(existing_timestamp + 21600).strftime('%Y-%m-%d %H:%M:%S')}")
