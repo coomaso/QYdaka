@@ -231,7 +231,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         data = {
             "sskjPassword": "2giTy1DTppbddyVBc0F6gMdSpT583XjDyJJxME2ocJ4="
         }
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
+        headers["Content-Type"] = "application/json"
 
         htm = session.post(
             f"{BASE_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
