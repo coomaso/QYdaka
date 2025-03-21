@@ -18,7 +18,12 @@ max_attempts = 20  # 最大尝试次数
 attempt = 0  # 计数器
 
 BASE_url = "https://zhcjsmz.sc.yichang.gov.cn"
-
+login_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngsPageByUser"
+getActivity_url = "https://zhcjsmz.sc.yichang.gov.cn/auth/oauth/token"
+wexinqq_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c54716bc-1e20-4e2c-99cd-e61267902850"
+idCardNumber_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/person/pageNotAvatar?idCardNumber=420526198606271020"
+idPP_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/person/27faee7bb9cccc3322cad7d9da6ed623"
+idXMB_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
 
 headers = {
  "Host": "zhcjsmz.sc.yichang.gov.cn",
@@ -36,15 +41,6 @@ headers = {
  "Authorization": "Basic cGlnOnBpZw=="
 }
 
-def get_script_dir():
-    """获取脚本所在的绝对目录路径"""
-    script_path = Path(__file__).resolve()  # 解析符号链接（如果有）
-    return script_path.parent
- 
-# 获取脚本当前目录
-script_dir = get_script_dir()
-token_path = script_dir / "access_token.json"
-logger.info(f"Token文件存储路径: {token_path}")
 # 加密函数
 def aes_encrypt(word, key_word):
  key = bytes(key_word, 'utf-8')
@@ -148,77 +144,6 @@ def resize_image(base64_string, new_width):
 
  return resized_base64
 
-# 读取 access_token.json 文件
-def read_access_token():
-    try:
-        token_path = get_script_dir() / "access_token.json"
-        
-        # 确保目录存在（使用正确路径）
-        token_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        if not token_path.exists():
-            return None, 0
-            
-        with token_path.open('r') as f:
-            data = json.load(f)
-            return data.get('access_token'), data.get('timestamp', 0)
-    except Exception as e:
-        logger.error(f"读取token失败: {str(e)}")
-        return None, 0
-     
-# 保存 access_token.json 文件
-def save_access_token(token):
-    """安全保存access_token到脚本同级目录"""
-    try:
-        target_path = get_script_dir() / "access_token.json"
-        
-        # 确保目录存在
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # 写入文件（使用Path对象操作）
-        with target_path.open('w') as f:
-            json.dump({
-                "access_token": token,
-                "timestamp": int(time.time())
-            }, f, indent=2)
-            
-        # 设置安全权限（兼容Path对象）
-        if os.name == 'posix':
-            os.chmod(str(target_path), 0o600)  # 转换为字符串
-            
-        logger.success(f"Token成功保存至: {target_path}")
-        return True
-        
-    except PermissionError as pe:
-        logger.error(f"权限不足: {str(pe)}")
-        try:
-            # 尝试修复权限
-            os.chmod(str(target_path.parent), 0o755)
-            if target_path.exists():
-                os.chmod(str(target_path), 0o600)
-            with target_path.open('w') as f:
-                json.dump({
-                    "access_token": token,
-                    "timestamp": int(time.time())
-                }, f, indent=2)
-            logger.warning("通过权限修复完成写入")
-            return True
-        except Exception as e:
-            logger.critical(f"最终写入失败: {str(e)}")
-            raise
-    except Exception as e:
-        logger.error(f"其他保存错误: {str(e)}")
-        raise
-     
-
-
-
-login_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngsPageByUser"
-getActivity_url = "https://zhcjsmz.sc.yichang.gov.cn/auth/oauth/token"
-wexinqq_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c54716bc-1e20-4e2c-99cd-e61267902850"
-idCardNumber_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/person/pageNotAvatar?idCardNumber=420526198606271020"
-idPP_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/person/27faee7bb9cccc3322cad7d9da6ed623"
-idXMB_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
 
 def send_wexinqq_md(webhook, content):
     header = {
@@ -272,19 +197,14 @@ def format_result(data):
     return result
 
 def get_login(access_token_value):
-    try:
-        access_token = get_access_token()
-    except KeyError:
-        access_token = get_access_token()
     
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
         "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": f'bearer {access_token}',
+        "Authorization": f'bearer {access_token_value}',
         "Referer": "https://zhcjsmz.sc.yichang.gov.cn/cyrygl/"
     }
     
-
     page = 1
     pages = 1
     while page <= pages:
@@ -292,8 +212,6 @@ def get_login(access_token_value):
         try:
             response_list = requests.get(url=url, headers=headers).json()
         except KeyError:
-            access_token = get_access_token()
-            response_list = requests.get(url=url, headers=headers).json()
         pages = response_list['data']['pages']
         for item in response_list['data']['records']:
             if item['isFinish'] == '否':
@@ -313,8 +231,9 @@ def get_login(access_token_value):
         time.sleep(3 + 2 * random.random())
         page += 1
 
-# 读取 access_token
-existing_access_token, existing_timestamp = read_access_token()
+# 初始化 existing_access_token 和 existing_timestamp
+existing_access_token = None
+existing_timestamp = 0
 
 # 判断 access_token 是否过期（6 小时）
 if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 60):
@@ -410,10 +329,9 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
             access_token_value = response_json.get('access_token')
 
             if access_token_value:
-                if save_access_token(access_token_value):
-                    logger.info(f"第{attempt}次尝试成功")
-                    success = True
-                    break
+                logger.info(f"第{attempt}次尝试成功")
+                success = True
+                break
         except Exception as e:
             logger.error(f"尝试{attempt}失败: {str(e)}")
             time.sleep(random.uniform(1, 10))
