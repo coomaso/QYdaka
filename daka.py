@@ -220,12 +220,13 @@ def get_login(access_token_value):
                     XMB = get_ppname(access_token_value, XMB_ID, XMB_KEY)
                     current_time = (datetime.now() + timedelta(hours=8)).strftime("%m-%d %H:%M")
                     content = (
-                        f'## 考勤提示:<font color=\"info\">{XMB_NAME}</font>{current_time}\n'
+                        f'## 考勤提示:<font color=\"info\">{XMB_NAME}</font> {current_time}\n'
                         f">**<font color=\"warning\">缺勤人员:{str(GESHIHUAXMB_QUE_NAME(XMB['QUE']))}</font>**\n"
                         f">请假人员:<font color=\"comment\">{str(GESHIHUAXMB_QUE_NAME(XMB['JIA']))}</font>\n"
                         f">完成人员:<font color=\"comment\">{str(GESHIHUAXMB_QUE_NAME(XMB['OK']))}</font>\n"
                     )
                     send_wexinqq_md(wexinqq_url, content)
+                    logger.info(f"{XMB_NAME}项目缺勤提醒发送成功")
                     time.sleep(3 + 2 * random.random())
         except KeyError as e:
             logger.error(f"数据解析错误: {e}")
