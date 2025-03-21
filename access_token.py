@@ -19,7 +19,8 @@ attempt = 0  # 计数器
 
 BASE_url = "https://zhcjsmz.sc.yichang.gov.cn"
 # 获取脚本当前目录
-TOKEN_file = Path("/tmp/access_token.json")
+script_dir = get_script_dir()
+token_path = script_dir / "access_token.json"
 
 headers = {
  "Host": "zhcjsmz.sc.yichang.gov.cn",
@@ -37,59 +38,10 @@ headers = {
  "Authorization": "Basic cGlnOnBpZw=="
 }
 
-def get_token_path():
-    """定位到项目根目录的access_token.json"""
-    project_root = Path(__file__).resolve().parent.parent  # 根据实际目录结构调整.parent次数
-    return project_root / "access_token.json"
- 
-def ensure_directory_exists(file_path):
-    """确保文件所在目录存在"""
-    file_path.parent.mkdir(parents=True, exist_ok=True) 
-
-def verify_permissions(file_path):
-    """验证并打印文件权限"""
-    try:
-        current_mode = os.stat(file_path).st_mode
-        readable = os.access(file_path, os.R_OK)
-        writable = os.access(file_path, os.W_OK)
-        
-        logger.info(f"文件权限: {oct(stat.S_IMODE(current_mode))}")
-        logger.info(f"可读: {readable}, 可写: {writable}")
-        
-        return writable
-    except Exception as e:
-        logger.error(f"权限验证失败: {str(e)}")
-        return False
-
-def safe_write_token(token):
-    """带权限验证的写入操作"""
-    token_path = Path("/home/runner/work/bid/access_token.json")
-    
-    try:
-        # 尝试直接写入
-        with token_path.open('w') as f:
-            json.dump({'token': token}, f)
-        logger.success("直接写入成功")
-        
-    except PermissionError:
-        logger.warning("检测到权限不足，尝试修复...")
-        
-        try:
-            # 临时修改权限（仅用于调试）
-            token_path.parent.mkdir(parents=True, exist_ok=True)
-            os.chmod(str(token_path.parent), 0o777)
-            if not token_path.exists():
-                token_path.touch()
-            os.chmod(str(token_path), 0o777)
-            
-            # 再次尝试写入
-            with token_path.open('w') as f:
-                json.dump({'token': token}, f)
-            logger.success("权限修复后写入成功")
-            
-        except Exception as e:
-            logger.critical(f"最终写入失败: {str(e)}")
-            raise
+def get_script_dir():
+    """获取脚本所在的绝对目录路径"""
+    script_path = Path(__file__).resolve()  # 解析符号链接（如果有）
+    return script_path.parent
 
 # 加密函数
 def aes_encrypt(word, key_word):
@@ -197,8 +149,11 @@ def resize_image(base64_string, new_width):
 # 读取 access_token.json 文件
 def read_access_token():
     try:
-        token_path = get_token_path()
-        ensure_directory_exists(token_path)
+        # 获取目标路径     
+        token_path = get_script_dir() / "access_token.json"
+     
+        # 确保目录存在
+        target_path.parent.mkdir(parents=True, exist_ok=True)
         
         if not token_path.exists():
             return None, 0
@@ -212,23 +167,30 @@ def read_access_token():
      
 # 保存 access_token.json 文件
 def save_access_token(token):
+    """安全保存access_token到脚本同级目录"""
     try:
-        token_path = get_token_path()
-        ensure_directory_exists(token_path)
+        # 获取目标路径
+        target_path = get_script_dir() / "access_token.json"
         
-        data = {
-            'access_token': token,
-            'timestamp': int(time.time())
-        }
+        # 确保目录存在
+        target_path.parent.mkdir(parents=True, exist_ok=True)
         
-        with token_path.open('w') as f:
-            json.dump(data, f)
+        # 写入文件
+        with open(target_path, 'w') as f:
+            json.dump({
+                "access_token": token,
+                "timestamp": int(time.time())
+            }, f, indent=2)
             
+        # 设置安全权限（仅Linux）
         if os.name == 'posix':
-            os.chmod(str(token_path), 0o600)
+            os.chmod(target_path, 0o600)  # 仅允许所有者读写
             
+        logger.success(f"Token成功保存至: {target_path}")
+        
     except Exception as e:
-        logger.error(f"保存token失败: {str(e)}")
+        logger.error(f"保存Token失败: {str(e)}")
+        raise
      
 # 读取 access_token
 existing_access_token, existing_timestamp = read_access_token()
