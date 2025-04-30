@@ -20,7 +20,7 @@ attempt = 0  # 计数器
 BASE_url = "https://zhcjsmz.sc.yichang.gov.cn"
 login_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngsPageByUser"
 getActivity_url = "https://zhcjsmz.sc.yichang.gov.cn/auth/oauth/token"
-wexinqq_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c54716bc-1e20-4e2c-99cd-e61267902850"
+wexinqq_url = os.environ["QYWX_URL"]
 idCardNumber_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/person/pageNotAvatar?idCardNumber=420526198606271020"
 idPP_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/person/27faee7bb9cccc3322cad7d9da6ed623"
 idXMB_url = "https://zhcjsmz.sc.yichang.gov.cn/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
