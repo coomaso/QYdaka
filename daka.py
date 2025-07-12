@@ -313,7 +313,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
 
         htm = session.post(f"{BASE_url}/code/check", 
                            json=json.loads(pverdat), 
-                           # headers=headers
+                           headers=headers
                           )
         
         # 调用接口后先打印响应内容和状态码
