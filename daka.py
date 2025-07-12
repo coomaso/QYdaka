@@ -26,19 +26,19 @@ idPP_url = "http://106.15.60.27:33333/labor/person/27faee7bb9cccc3322cad7d9da6ed
 idXMB_url = "http://106.15.60.27:33333/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
 
 headers = {
- # "Host": "zhcjsmz.sanxiacloud.com",
- # "Connection": "keep-alive",
- # "sec-ch-ua": '"Not.A/Brand";v="8", "Chromium";v="114"',
- # "Accept": "*/*",
- # "Content-Type": "application/json;charset=UTF-8",
- # "sec-ch-ua-mobile": "?0",
- # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.289 Safari/537.36",
- # "sec-ch-ua-platform": '"Windows"',
- # "Origin": "http://106.15.60.27:33333",
- # "Referer": "http://106.15.60.27:33333/login/",
- # "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,vi;q=0.7",
- # "Accept-Encoding": "gzip, deflate",
- # "Authorization": "Basic cGlnOnBpZw=="
+ "Host": "zhcjsmz.sanxiacloud.com",
+ "Connection": "keep-alive",
+ "sec-ch-ua": '"Not.A/Brand";v="8", "Chromium";v="114"',
+ "Accept": "*/*",
+ "Content-Type": "application/json;charset=UTF-8",
+ "sec-ch-ua-mobile": "?0",
+ "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.289 Safari/537.36",
+ "sec-ch-ua-platform": '"Windows"',
+ "Origin": "http://106.15.60.27:33333",
+ "Referer": "http://106.15.60.27:33333/login/",
+ "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,vi;q=0.7",
+ "Accept-Encoding": "gzip, deflate",
+ "Authorization": "Basic cGlnOnBpZw=="
 }
 
 # 加密函数
