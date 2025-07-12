@@ -264,7 +264,10 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         }
 
         # 获取 API 响应
-        response = session.post(f"{BASE_url}/code/create", # headers=headers, json=data)
+        response = session.post(f"{BASE_url}/code/create", 
+                                # headers=headers, 
+                                json=data
+                               )
         
         # 先检查状态码
         if response.status_code != 200:
