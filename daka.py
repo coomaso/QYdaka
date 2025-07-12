@@ -312,7 +312,15 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         })
 
         htm = session.post(f"{BASE_url}/code/check", json=json.loads(pverdat), headers=headers)
-        logger.info(f"图形验证check回参 {htm.json()}")
+        
+        # 调用接口后先打印响应内容和状态码
+        logger.info(f"图形验证check回参 状态码: {htm.status_code}")
+        
+        try:
+            response_json = htm.json()
+            logger.info(f"图形验证check回参 JSON: {response_json}")
+        except Exception as e:
+            logger.error(f"解析图形验证check回参 JSON 失败: {e}, 内容: {htm.text}")
 
         captcha = aes_encrypt(token + '---' + posStr, secret_key)
         logger.info(f"加密后的 captcha: {captcha}")
