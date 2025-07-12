@@ -322,7 +322,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         htm = session.post(
             f"{BASE_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
             json=data, 
-            headers=headers
+            # headers=headers
         )
 
         logger.info(f"请求返回状态码: {htm.status_code}, 返回内容: {htm.text}")
