@@ -311,7 +311,10 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
             "ts": current_timestamp_milliseconds
         })
 
-        htm = session.post(f"{BASE_url}/code/check", json=json.loads(pverdat), headers=headers)
+        htm = session.post(f"{BASE_url}/code/check", 
+                           json=json.loads(pverdat), 
+                           # headers=headers
+                          )
         
         # 调用接口后先打印响应内容和状态码
         logger.info(f"图形验证check回参 状态码: {htm.status_code}")
