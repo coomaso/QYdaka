@@ -17,13 +17,13 @@ from datetime import datetime, timedelta
 max_attempts = 10  # 最大尝试次数
 attempt = 0  # 计数器
 
-BASE_url = "https://zhcjsmz.sanxiacloud.com"
-login_url = "https://zhcjsmz.sanxiacloud.com/labor/workordereng/getEngsPageByUser"
-getActivity_url = "https://zhcjsmz.sanxiacloud.com/auth/oauth/token"
+BASE_url = "http://106.15.60.27:33333"
+login_url = "http://106.15.60.27:33333/labor/workordereng/getEngsPageByUser"
+getActivity_url = "http://106.15.60.27:33333/auth/oauth/token"
 wexinqq_url = os.environ["QYWX_URL"]
-idCardNumber_url = "https://zhcjsmz.sanxiacloud.com/labor/person/pageNotAvatar?idCardNumber=420526198606271020"
-idPP_url = "https://zhcjsmz.sanxiacloud.com/labor/person/27faee7bb9cccc3322cad7d9da6ed623"
-idXMB_url = "https://zhcjsmz.sanxiacloud.com/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
+idCardNumber_url = "http://106.15.60.27:33333/labor/person/pageNotAvatar?idCardNumber=420526198606271020"
+idPP_url = "http://106.15.60.27:33333/labor/person/27faee7bb9cccc3322cad7d9da6ed623"
+idXMB_url = "http://106.15.60.27:33333/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
 
 headers = {
  "Host": "zhcjsmz.sanxiacloud.com",
@@ -34,8 +34,8 @@ headers = {
  "sec-ch-ua-mobile": "?0",
  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.289 Safari/537.36",
  "sec-ch-ua-platform": '"Windows"',
- "Origin": "https://zhcjsmz.sanxiacloud.com",
- "Referer": "https://zhcjsmz.sanxiacloud.com/login/",
+ "Origin": "http://106.15.60.27:33333",
+ "Referer": "http://106.15.60.27:33333/login/",
  "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,vi;q=0.7",
  "Accept-Encoding": "gzip, deflate",
  "Authorization": "Basic cGlnOnBpZw=="
@@ -171,9 +171,9 @@ def get_ppname(access_token, XMB_ID, XMB_KEY):
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f'bearer {access_token}',
         "host": "zhcjsmz.sanxiacloud.com",
-        "Referer": "https://zhcjsmz.sanxiacloud.com/cyrygl/"
+        "Referer": "http://106.15.60.27:33333/cyrygl/"
     }
-    JobCheckurl = f'https://zhcjsmz.sanxiacloud.com/laboratt/statisticsManager/getGlgwJobIsCheck?engId={XMB_ID}&workId={XMB_KEY}&checkDay={datetime.now().strftime("%Y-%m-%d")}'
+    JobCheckurl = f'http://106.15.60.27:33333/laboratt/statisticsManager/getGlgwJobIsCheck?engId={XMB_ID}&workId={XMB_KEY}&checkDay={datetime.now().strftime("%Y-%m-%d")}'
     response_name = requests.get(url=JobCheckurl, headers=headers).json()
     
     NAME = {"OK": [], "QUE": [], "JIA": []}
@@ -202,7 +202,7 @@ def get_login(access_token_value):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f'bearer {access_token_value}',
-        "Referer": "https://zhcjsmz.sanxiacloud.com/cyrygl/"
+        "Referer": "http://106.15.60.27:33333/cyrygl/"
     }
     
     page = 1
@@ -248,7 +248,7 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         logger.info(f"第 {attempt} 次尝试获取 access_token...")
 
         session = requests.session()
-        response = session.get("https://zhcjsmz.sanxiacloud.com/login/#/login", headers=headers)
+        response = session.get("http://106.15.60.27:33333/login/#/login", headers=headers)
         
         # 解析 Cookie
         cookies_dict = requests.utils.dict_from_cookiejar(session.cookies)
