@@ -76,81 +76,44 @@ def getImgPos(bg, tp, scale_factor):
     # 解码Base64字符串为字节对象
     bg = base64.b64decode(bg)
     tp = base64.b64decode(tp)
-
+    
     # 读取背景图片和缺口图片
     bg_img = cv2.imdecode(np.frombuffer(bg, np.uint8), cv2.IMREAD_COLOR) # 背景图片
     tp_img = cv2.imdecode(np.frombuffer(tp, np.uint8), cv2.IMREAD_COLOR)  # 缺口图片
-
+    
     # 对图像进行缩放
     bg_img = cv2.resize(bg_img, (0, 0), fx=scale_factor, fy=scale_factor)
     tp_img = cv2.resize(tp_img, (0, 0), fx=scale_factor, fy=scale_factor)
-
+    
     # 识别图片边缘
-    bg_edge = cv2.Canny(bg_img, 100, 200)
-    tp_edge = cv2.Canny(tp_img, 100, 200)
-
+    bg_edge = cv2.Canny(bg_img, 50, 400)
+    tp_edge = cv2.Canny(tp_img, 50, 400)
+    
     # 转换图片格式
     bg_pic = cv2.cvtColor(bg_edge, cv2.COLOR_GRAY2RGB)
     tp_pic = cv2.cvtColor(tp_edge, cv2.COLOR_GRAY2RGB)
-
+    
     # 缺口匹配
     res = cv2.matchTemplate(bg_pic, tp_pic, cv2.TM_CCOEFF_NORMED)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)  # 寻找最优匹配
-
-    # 如果匹配度太低，尝试其他方法
-    if max_val < 0.4:
-        # 尝试使用边缘检测和轮廓匹配
-        bg_gray = cv2.cvtColor(bg_img, cv2.COLOR_BGR2GRAY)
-        tp_gray = cv2.cvtColor(tp_img, cv2.COLOR_BGR2GRAY)
-        
-        # 使用SIFT特征匹配
-        sift = cv2.SIFT_create()
-        kp1, des1 = sift.detectAndCompute(tp_gray, None)
-        kp2, des2 = sift.detectAndCompute(bg_gray, None)
-        
-        # FLANN匹配器
-        index_params = dict(algorithm=1, trees=5)
-        search_params = dict(checks=50)
-        flann = cv2.FlannBasedMatcher(index_params, search_params)
-        matches = flann.knnMatch(des1, des2, k=2)
-        
-        # 筛选好的匹配点
-        good = []
-        for m, n in matches:
-            if m.distance < 0.7 * n.distance:
-                good.append(m)
-        
-        if len(good) > 10:
-            src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-            dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-            
-            # 计算变换矩阵
-            M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-            if M is not None:
-                # 计算缺口位置
-                h, w = tp_gray.shape
-                pts = np.float32([[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]]).reshape(-1, 1, 2)
-                dst = cv2.perspectiveTransform(pts, M)
-                max_loc = (int(dst[0][0][0]), int(dst[0][0][1]))
-            else:
-                logger.warning("SIFT匹配失败，使用原始匹配结果")
-        else:
-            logger.warning("特征点不足，使用原始匹配结果")
+    _, _, _, max_loc = cv2.minMaxLoc(res)  # 寻找最优匹配
+    
+    # 缩放坐标
+    #scaled_max_loc = (max_loc[0] * scale_factor, max_loc[1] * scale_factor)
     
     # 绘制方框
     th, tw = tp_pic.shape[:2]
     tl = max_loc  # 左上角点的坐标
     br = (tl[0] + tw, tl[1] + th)  # 右下角点的坐标
     cv2.rectangle(bg_img, (int(tl[0]), int(tl[1])), (int(br[0]), int(br[1])), (0, 0, 255), 2)  # 绘制矩形
-
+    
     # 保存至本地
     output_path = os.path.join(os.getcwd(), "output_imageX.jpg")
     cv2.imwrite(output_path, bg_img)
     tp_img_path = os.path.join(os.getcwd(), "tp_imgX.jpg")
     cv2.imwrite(tp_img_path, tp_img)
-
-    logger.info(f"缺口的X坐标: {max_loc[0]:.4f}, 匹配度: {max_val:.4f}")
-
+    
+    logger.info(f"缺口的X坐标: {max_loc[0]:.4f}")
+    
     # 返回缺口的X坐标
     return max_loc[0] - 2.5
 
