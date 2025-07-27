@@ -1,3 +1,5 @@
+import gzip
+import zlib
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
@@ -197,46 +199,116 @@ def format_result(data):
     return result
 
 def get_login(access_token_value):
+    # 在get_login()函数开头添加
+    logger.debug(f"使用Token: {access_token_value[:10]}...")
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
-        "Authorization": f'bearer {access_token_value}',  # 移除了Content-Type
-        "Referer": "http://106.15.60.27:33333/cyrygl/"
-    }    
+        "Authorization": f'bearer {access_token_value}',
+        "Referer": "http://106.15.60.27:33333/cyrygl/",
+        "Accept-Encoding": "gzip, deflate, br"  # 明确接受压缩格式
+    }
+    
     page = 1
     pages = 1
     while page <= pages:
-        url = f'{login_url}?limit=10&page={page}'        
+        url = f'{login_url}?limit=10&page={page}'
+        
         try:
-            response = requests.get(url=url, headers=headers, timeout=10)
+            logger.debug(f"请求项目列表: {url}")
             
-            # 增加响应状态检查
-            if response.status_code != 200:
-                logger.error(f"API返回异常状态码: {response.status_code}")
-                logger.debug(f"响应内容: {response.text[:200]}")
+            # 增加重试机制
+            for retry in range(3):
+                try:
+                    response = requests.get(
+                        url=url, 
+                        headers=headers, 
+                        timeout=15,
+                        stream=True  # 处理可能的压缩
+                    )
+                    break
+                except (requests.Timeout, requests.ConnectionError) as e:
+                    logger.warning(f"请求超时({retry+1}/3): {str(e)}")
+                    time.sleep(2)
+            else:
+                logger.error("多次重试后请求失败")
                 page += 1
                 continue
                 
-            # 增加空响应检查
-            if not response.text.strip():
+            # 检查响应状态
+            if response.status_code != 200:
+                logger.error(f"API返回异常状态码: {response.status_code}")
+                
+                # 记录详细错误信息
+                error_info = {
+                    "url": url,
+                    "status": response.status_code,
+                    "headers": dict(response.headers),
+                    "content": response.text[:500] if response.text else "[空响应]"
+                }
+                logger.error(f"错误详情: {json.dumps(error_info, ensure_ascii=False)}")
+                
+                page += 1
+                continue
+                
+            # 检查内容类型
+            content_type = response.headers.get('Content-Type', '')
+            logger.debug(f"内容类型: {content_type}")
+            
+            # 处理可能的压缩
+            if 'gzip' in content_type:
+                content = gzip.decompress(response.content).decode('utf-8')
+            elif 'deflate' in content_type:
+                content = zlib.decompress(response.content).decode('utf-8')
+            else:
+                content = response.text
+                
+            # 检查空响应
+            if not content.strip():
                 logger.error("API返回空响应")
                 page += 1
                 continue
                 
+            # 尝试解析JSON
             try:
-                response_list = response.json()
-            except json.JSONDecodeError:
-                logger.error("API返回非JSON格式响应")
-                logger.debug(f"响应内容: {response.text[:200]}")
+                # 记录前100个字符用于调试
+                logger.debug(f"响应内容开头: {content[:100]}")
+                
+                response_list = json.loads(content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON解析失败: {str(e)}")
+                
+                # 保存原始响应用于调试
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                debug_file = f"api_response_{page}_{timestamp}.html"
+                with open(debug_file, "w", encoding="utf-8") as f:
+                    f.write(content)
+                
+                logger.error(f"已保存原始响应到: {debug_file}")
+                logger.debug(f"响应内容类型: {type(content)}")
+                logger.debug(f"完整响应内容: {content[:500]}...")
+                
                 page += 1
                 continue
-             
-            # 原有业务逻辑处理
-            pages = response_list.get('data', {}).get('pages', 1)
-            records = response_list.get('data', {}).get('records', [])
+            
+            # 检查数据结构
+            if not isinstance(response_list, dict) or 'data' not in response_list:
+                logger.error(f"API返回数据结构异常: {type(response_list)}")
+                logger.debug(f"响应内容: {content[:500]}")
+                page += 1
+                continue
+                
+            # 处理分页数据
+            data = response_list.get('data', {})
+            pages = data.get('pages', 1)
+            records = data.get('records', [])
             
             if not records:
-                logger.info("未获取到项目数据")
-                break                
+                logger.info(f"第{page}页未获取到项目数据")
+                break
+                
+            logger.info(f"第{page}页获取到{len(records)}个项目")
+            
+            # 处理每个项目        
             for item in records:
                 if item['isFinish'] == '否':
                     XMB_NAME = item['sgxkName']
