@@ -170,25 +170,97 @@ def GESHIHUAXMB_QUE_NAME(data):
 def get_ppname(access_token, XMB_ID, XMB_KEY):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
-        # "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f'bearer {access_token}',
-        "host": "zhcjsmz.sanxiacloud.com",
-        "Referer": "http://106.15.60.27:33333/cyrygl/"
+        "Referer": "http://106.15.60.27:33333/cyrygl/",
+        "Accept-Encoding": "gzip, deflate, br"
     }
     JobCheckurl = f'http://106.15.60.27:33333/laboratt/statisticsManager/getGlgwJobIsCheck?engId={XMB_ID}&workId={XMB_KEY}&checkDay={datetime.now().strftime("%Y-%m-%d")}'
-    response_name = requests.get(url=JobCheckurl, headers=headers).json()
     
-    NAME = {"OK": [], "QUE": [], "JIA": []}
-    
-    for item in response_name['data']:
-        if item['pp'] == '施工单位' and item['state'] == 1:
-            NAME['QUE'].append('@' + item['name'] + ' ')
-        elif item['pp'] == '施工单位' and item['state'] == 2:
-            NAME['JIA'].append('@' + item['name'] + ' ')
-        elif item['pp'] == '施工单位' and item['state'] == 0:
-            NAME['OK'].append('@' + item['name'] + ' ')
-    
-    return NAME
+    try:
+        logger.debug(f"请求人员考勤API: {JobCheckurl}")
+        
+        # 增加重试机制
+        for retry in range(3):
+            try:
+                response = requests.get(
+                    url=JobCheckurl, 
+                    headers=headers, 
+                    timeout=15,
+                    stream=True
+                )
+                break
+            except (requests.Timeout, requests.ConnectionError) as e:
+                logger.warning(f"人员考勤API请求超时({retry+1}/3): {str(e)}")
+                time.sleep(2)
+        else:
+            logger.error("人员考勤API多次重试后失败")
+            return {"OK": [], "QUE": [], "JIA": []}
+        
+        # 检查响应状态
+        if response.status_code != 200:
+            logger.error(f"人员考勤API返回异常状态码: {response.status_code}")
+            logger.debug(f"响应头: {dict(response.headers)}")
+            return {"OK": [], "QUE": [], "JIA": []}
+        
+        # 处理可能的压缩
+        content_type = response.headers.get('Content-Type', '')
+        if 'gzip' in content_type:
+            content = gzip.decompress(response.content).decode('utf-8')
+        elif 'deflate' in content_type:
+            content = zlib.decompress(response.content).decode('utf-8')
+        else:
+            content = response.text
+            
+        # 检查空响应
+        if not content.strip():
+            logger.error("人员考勤API返回空响应")
+            return {"OK": [], "QUE": [], "JIA": []}
+            
+        # 尝试解析JSON
+        try:
+            # 记录前100个字符用于调试
+            logger.debug(f"人员考勤响应内容开头: {content[:100]}")
+            
+            response_name = json.loads(content)
+        except json.JSONDecodeError as e:
+            logger.error(f"人员考勤JSON解析失败: {str(e)}")
+            
+            # 保存原始响应用于调试
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            debug_file = f"person_response_{XMB_ID}_{timestamp}.html"
+            with open(debug_file, "w", encoding="utf-8") as f:
+                f.write(content)
+            
+            logger.error(f"已保存原始响应到: {debug_file}")
+            logger.debug(f"响应内容: {content[:500]}")
+            
+            return {"OK": [], "QUE": [], "JIA": []}
+        
+        # 确保数据结构正确
+        if 'data' not in response_name:
+            logger.error(f"人员考勤API返回数据结构异常")
+            logger.debug(f"响应内容: {content[:500]}")
+            return {"OK": [], "QUE": [], "JIA": []}
+        
+        NAME = {"OK": [], "QUE": [], "JIA": []}
+        
+        for item in response_name['data']:
+            if item.get('pp') == '施工单位':
+                state = item.get('state')
+                name = item.get('name', '未知')
+                
+                if state == 1:
+                    NAME['QUE'].append('@' + name + ' ')
+                elif state == 2:
+                    NAME['JIA'].append('@' + name + ' ')
+                elif state == 0:
+                    NAME['OK'].append('@' + name + ' ')
+        
+        return NAME
+        
+    except Exception as e:
+        logger.exception(f"处理人员考勤时发生异常: ")
+        return {"OK": [], "QUE": [], "JIA": []}
 
 def format_result(data):
     result = ""
@@ -314,6 +386,7 @@ def get_login(access_token_value):
                     XMB_NAME = item['sgxkName']
                     XMB_ID = item['sgxkId']
                     XMB_KEY = item['workOrderId']
+                    logger.info(f"处理项目: {XMB_NAME} (ID: {XMB_ID})")
                     XMB = get_ppname(access_token_value, XMB_ID, XMB_KEY)
                     current_time = (datetime.now() + timedelta(hours=8)).strftime("%m-%d %H:%M")
                     content = (
