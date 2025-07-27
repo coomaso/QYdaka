@@ -197,20 +197,38 @@ def format_result(data):
     return result
 
 def get_login(access_token_value):
-    
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": f'bearer {access_token_value}',
+        "Authorization": f'bearer {access_token_value}',  # 移除了Content-Type
         "Referer": "http://106.15.60.27:33333/cyrygl/"
-    }
-    
+    }    
     page = 1
     pages = 1
     while page <= pages:
         url = f'{login_url}?limit=10&page={page}'        
         try:
-            response_list = requests.get(url=url, headers=headers).json()
+            response = requests.get(url=url, headers=headers, timeout=10)
+            
+            # 增加响应状态检查
+            if response.status_code != 200:
+                logger.error(f"API返回异常状态码: {response.status_code}")
+                logger.debug(f"响应内容: {response.text[:200]}")
+                page += 1
+                continue
+                
+            # 增加空响应检查
+            if not response.text.strip():
+                logger.error("API返回空响应")
+                page += 1
+                continue
+                
+            try:
+                response_list = response.json()
+            except json.JSONDecodeError:
+                logger.error("API返回非JSON格式响应")
+                logger.debug(f"响应内容: {response.text[:200]}")
+                page += 1
+                continue
             pages = response_list['data']['pages']
             for item in response_list['data']['records']:
                 if item['isFinish'] == '否':
