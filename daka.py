@@ -26,122 +26,124 @@ idPP_url = "http://106.15.60.27:33333/labor/person/27faee7bb9cccc3322cad7d9da6ed
 idXMB_url = "http://106.15.60.27:33333/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
 
 headers = {
-    "Connection": "keep-alive",
-    "sec-ch-ua": '"Not.A/Brand";v="8", "Chromium";v="114"',
-    "Accept": "*/*",
-    "Content-Type": "application/json;charset=UTF-8",
-    "sec-ch-ua-mobile": "?0",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.289 Safari/537.36",
-    "sec-ch-ua-platform": '"Windows"',
-    "Origin": "http://106.15.60.27:33333",
-    "Referer": "http://106.15.60.27:33333/login/",
-    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,vi;q=0.7",
-    "Accept-Encoding": "gzip, deflate",
-    "Authorization": "Basic cGlnOnBpZw=="
+ "Host": "zhcjsmz.sanxiacloud.com",
+ "Connection": "keep-alive",
+ "sec-ch-ua": '"Not.A/Brand";v="8", "Chromium";v="114"',
+ "Accept": "*/*",
+ "Content-Type": "application/json;charset=UTF-8",
+ "sec-ch-ua-mobile": "?0",
+ "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.289 Safari/537.36",
+ "sec-ch-ua-platform": '"Windows"',
+ "Origin": "http://106.15.60.27:33333",
+ "Referer": "http://106.15.60.27:33333/login/",
+ "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,vi;q=0.7",
+ "Accept-Encoding": "gzip, deflate",
+ "Authorization": "Basic cGlnOnBpZw=="
 }
 
 # 加密函数
 def aes_encrypt(word, key_word):
-    key = bytes(key_word, 'utf-8')
-    srcs = bytes(word, 'utf-8')
-    cipher = AES.new(key, AES.MODE_ECB)
-    encrypted = cipher.encrypt(pad(srcs, AES.block_size))
-    return base64.b64encode(encrypted).decode('utf-8')
+ key = bytes(key_word, 'utf-8')
+ srcs = bytes(word, 'utf-8')
+ cipher = AES.new(key, AES.MODE_ECB)
+ encrypted = cipher.encrypt(pad(srcs, AES.block_size))
+ return base64.b64encode(encrypted).decode('utf-8')
 
 def aes_decrypt(ciphertext, key_word):
-    key = bytes(key_word, 'utf-8')
-    ciphertext = base64.b64decode(ciphertext)
-    cipher = AES.new(key, AES.MODE_ECB)
-    decrypted = unpad(cipher.decrypt(ciphertext), AES.block_size)
-    return decrypted.decode('utf-8')
+ key = bytes(key_word, 'utf-8')
+ ciphertext = base64.b64decode(ciphertext)
+ cipher = AES.new(key, AES.MODE_ECB)
+ decrypted = unpad(cipher.decrypt(ciphertext), AES.block_size)
+ return decrypted.decode('utf-8')
 
 # 初始化 UUID
 def generate_client_uuid():
-    s = []
-    hex_digits = "0123456789abcdef"
-    for i in range(36):
-        s.append(hex_digits[random.randint(0, 15)])
-    s[14] = "4"  # time_hi_and_version字段的12-15位设置为0010
-    s[19] = hex_digits[(int(s[19], 16) & 0x3) | 0x8]  # clock_seq_hi_and_reserved字段的6-7位设置为01
-    s[8] = s[13] = s[18] = s[23] = "-"
-    return 'slider-' + ''.join(s)
+ s = []
+ hex_digits = "0123456789abcdef"
+ for i in range(36):
+     s.append(hex_digits[random.randint(0, 15)])
+ s[14] = "4"  # time_hi_and_version字段的12-15位设置为0010
+ s[19] = hex_digits[(int(s[19], 16) & 0x3) | 0x8]  # clock_seq_hi_and_reserved字段的6-7位设置为01
+ s[8] = s[13] = s[18] = s[23] = "-"
+ return 'slider-' + ''.join(s)
 
 # 获取图片函数
 def getImgPos(bg, tp, scale_factor):
-    '''
-    bg: 背景图片
-    tp: 缺口图片
-    out:输出图片
-    '''
-    # 解码Base64字符串为字节对象
-    bg = base64.b64decode(bg)
-    tp = base64.b64decode(tp)
-    
-    # 读取背景图片和缺口图片
-    bg_img = cv2.imdecode(np.frombuffer(bg, np.uint8), cv2.IMREAD_COLOR) # 背景图片
-    tp_img = cv2.imdecode(np.frombuffer(tp, np.uint8), cv2.IMREAD_COLOR)  # 缺口图片
-    
-    # 对图像进行缩放
-    bg_img = cv2.resize(bg_img, (0, 0), fx=scale_factor, fy=scale_factor)
-    tp_img = cv2.resize(tp_img, (0, 0), fx=scale_factor, fy=scale_factor)
-    
-    # 识别图片边缘
-    bg_edge = cv2.Canny(bg_img, 50, 400)
-    tp_edge = cv2.Canny(tp_img, 50, 400)
-    
-    # 转换图片格式
-    bg_pic = cv2.cvtColor(bg_edge, cv2.COLOR_GRAY2RGB)
-    tp_pic = cv2.cvtColor(tp_edge, cv2.COLOR_GRAY2RGB)
-    
-    # 缺口匹配
-    res = cv2.matchTemplate(bg_pic, tp_pic, cv2.TM_CCOEFF_NORMED)
-    _, _, _, max_loc = cv2.minMaxLoc(res)  # 寻找最优匹配
-    
-    # 缩放坐标
-    #scaled_max_loc = (max_loc[0] * scale_factor, max_loc[1] * scale_factor)
-    
-    # 绘制方框
-    th, tw = tp_pic.shape[:2]
-    tl = max_loc  # 左上角点的坐标
-    br = (tl[0] + tw, tl[1] + th)  # 右下角点的坐标
-    cv2.rectangle(bg_img, (int(tl[0]), int(tl[1])), (int(br[0]), int(br[1])), (0, 0, 255), 2)  # 绘制矩形
-    
-    # 保存至本地
-    output_path = os.path.join(os.getcwd(), "output_imageX.jpg")
-    cv2.imwrite(output_path, bg_img)
-    tp_img_path = os.path.join(os.getcwd(), "tp_imgX.jpg")
-    cv2.imwrite(tp_img_path, tp_img)
-    
-    logger.info(f"缺口的X坐标: {max_loc[0]:.4f}")
-    
-    # 返回缺口的X坐标
-    return max_loc[0] - 2.5
+ '''
+ bg: 背景图片
+ tp: 缺口图片
+ out:输出图片
+ '''
+ # 解码Base64字符串为字节对象
+ bg = base64.b64decode(bg)
+ tp = base64.b64decode(tp)
+
+ # 读取背景图片和缺口图片
+ bg_img = cv2.imdecode(np.frombuffer(bg, np.uint8), cv2.IMREAD_COLOR) # 背景图片
+ tp_img = cv2.imdecode(np.frombuffer(tp, np.uint8), cv2.IMREAD_COLOR)  # 缺口图片
+
+ # 对图像进行缩放
+ bg_img = cv2.resize(bg_img, (0, 0), fx=scale_factor, fy=scale_factor)
+ tp_img = cv2.resize(tp_img, (0, 0), fx=scale_factor, fy=scale_factor)
+
+ # 识别图片边缘
+ bg_edge = cv2.Canny(bg_img, 50, 400)
+ tp_edge = cv2.Canny(tp_img, 50, 400)
+
+ # 转换图片格式
+ bg_pic = cv2.cvtColor(bg_edge, cv2.COLOR_GRAY2RGB)
+ tp_pic = cv2.cvtColor(tp_edge, cv2.COLOR_GRAY2RGB)
+
+ # 缺口匹配
+ res = cv2.matchTemplate(bg_pic, tp_pic, cv2.TM_CCOEFF_NORMED)
+ _, _, _, max_loc = cv2.minMaxLoc(res)  # 寻找最优匹配
+
+ # 缩放坐标
+ #scaled_max_loc = (max_loc[0] * scale_factor, max_loc[1] * scale_factor)
+
+ # 绘制方框
+ th, tw = tp_pic.shape[:2]
+ tl = max_loc  # 左上角点的坐标
+ br = (tl[0] + tw, tl[1] + th)  # 右下角点的坐标
+ cv2.rectangle(bg_img, (int(tl[0]), int(tl[1])), (int(br[0]), int(br[1])), (0, 0, 255), 2)  # 绘制矩形
+
+ # 保存至本地
+ output_path = os.path.join(os.getcwd(), "output_imageX.jpg")
+ cv2.imwrite(output_path, bg_img)
+ tp_img_path = os.path.join(os.getcwd(), "tp_imgX.jpg")
+ cv2.imwrite(tp_img_path, tp_img)
+
+ logger.info(f"缺口的X坐标: {max_loc[0]:.4f}")
+
+ # 返回缺口的X坐标
+ return max_loc[0] - 2.5
 
 # 接受原始图像的Base64编码字符串和新的宽度作为参数，返回调整大小后的图像的Base64编码字符串
 def resize_image(base64_string, new_width):
-    # 将Base64字符串解码为字节数据
-    image_data = base64.b64decode(base64_string)
+ # 将Base64字符串解码为字节数据
+ image_data = base64.b64decode(base64_string)
 
-    # 将字节数据转换为图像对象
-    image = Image.open(io.BytesIO(image_data))
+ # 将字节数据转换为图像对象
+ image = Image.open(io.BytesIO(image_data))
 
-    # 确保图像的模式是RGB
-    if image.mode != 'RGB':
-        image = image.convert('RGB')
+ # 确保图像的模式是RGB
+ if image.mode != 'RGB':
+     image = image.convert('RGB')
 
-    # 计算高度以保持宽高比
-    original_width, original_height = image.size
-    new_height = int((new_width / original_width) * original_height)
+ # 计算高度以保持宽高比
+ original_width, original_height = image.size
+ new_height = int((new_width / original_width) * original_height)
 
-    # 调整图像大小
-    resized_image = image.resize((new_width, new_height))
+ # 调整图像大小
+ resized_image = image.resize((new_width, new_height))
 
-    # 将调整大小后的图像转换为Base64字符串
-    buffered = io.BytesIO()
-    resized_image.save(buffered, format="JPEG")
-    resized_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+ # 将调整大小后的图像转换为Base64字符串
+ buffered = io.BytesIO()
+ resized_image.save(buffered, format="JPEG")
+ resized_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-    return resized_base64
+ return resized_base64
+
 
 def send_wexinqq_md(webhook, content):
     header = {
@@ -195,6 +197,7 @@ def format_result(data):
     return result
 
 def get_login(access_token_value):
+    
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.125 Safari/537.36 Edg/87.0.664.47",
         "Content-Type": "application/x-www-form-urlencoded",
@@ -261,20 +264,29 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         }
 
         # 获取 API 响应
+        response = session.post(f"{BASE_url}/code/create", headers=headers, json=data)
+        
+        # 先检查状态码
+        if response.status_code != 200:
+            logger.error(f"API 请求失败，状态码: {response.status_code}, 响应内容: {response.text}")
+            raise ValueError("API 请求失败，请检查请求参数或服务器状态")
+        
+        # 尝试解析 JSON
         try:
-            response = session.post(f"{BASE_url}/code/create", json=data)
-            response.raise_for_status()
             response_data = response.json()
-        except (requests.RequestException, json.JSONDecodeError) as e:
-            logger.error(f"创建验证码失败: {str(e)}")
-            time.sleep(random.uniform(2, 5))
-            continue
+        except json.JSONDecodeError as e:
+            logger.error(f"解析 JSON 失败，响应内容: {response.text}, 错误信息: {str(e)}")
+            raise ValueError("API 返回的不是有效的 JSON 数据")
+        
+        # 确保 response_data 不是 None
+        if not response_data:
+            logger.error(f"API 返回空数据，响应内容: {response.text}")
+            raise ValueError("API 返回的数据为空")
         
         # 确保 response_data 结构正确
         if "data" not in response_data or "repData" not in response_data["data"]:
             logger.error(f"API 返回的数据格式不正确: {response_data}")
-            time.sleep(random.uniform(2, 5))
-            continue
+            raise ValueError("API 返回的数据缺少 'data' 或 'repData' 字段")
         
         # 解析数据
         secret_key = response_data["data"]["repData"]["secretKey"]
@@ -282,16 +294,11 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         bg_img_base64 = response_data["data"]["repData"]["originalImageBase64"]
         hk_img_base64 = response_data["data"]["repData"]["jigsawImageBase64"]
 
-        # 使用更可靠的图像识别方法
-        try:
-            pos = getImgPos(bg_img_base64, hk_img_base64, scale_factor=400 / 310)
-            posStr = '{"x":' + str(pos * (310 / 400)) + ',"y":5}'
-            pointJson = aes_encrypt(posStr, secret_key)
-            logger.info(f"pointJson {pointJson}")
-        except Exception as e:
-            logger.error(f"图像识别失败: {str(e)}")
-            time.sleep(random.uniform(2, 5))
-            continue
+
+        pos = getImgPos(bg_img_base64, hk_img_base64, scale_factor=400 / 310)
+        posStr = '{"x":' + str(pos * (310 / 400)) + ',"y":5}'
+        pointJson = aes_encrypt(posStr, secret_key)
+        logger.info(f"pointJson {pointJson}")
         
         pverdat = json.dumps({
             "captchaType": "blockPuzzle",
@@ -301,15 +308,8 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
             "ts": current_timestamp_milliseconds
         })
 
-        try:
-            htm = session.post(f"{BASE_url}/code/check", json=json.loads(pverdat))
-            htm.raise_for_status()
-            response_json = htm.json()
-            logger.info(f"图形验证check回参 JSON: {response_json}")
-        except (requests.RequestException, json.JSONDecodeError) as e:
-            logger.error(f"验证码检查失败: {str(e)}")
-            time.sleep(random.uniform(3, 8))
-            continue
+        htm = session.post(f"{BASE_url}/code/check", json=json.loads(pverdat), headers=headers)
+        logger.info(f"图形验证check回参 {htm.json()}")
 
         captcha = aes_encrypt(token + '---' + posStr, secret_key)
         logger.info(f"加密后的 captcha: {captcha}")
@@ -319,33 +319,32 @@ if not existing_access_token or (time.time() - existing_timestamp) > (6 * 60 * 6
         }
         headers["Content-Type"] = "application/json"
 
+        htm = session.post(
+            f"{BASE_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
+            json=data, 
+            headers=headers
+        )
+
+        logger.info(f"请求返回状态码: {htm.status_code}, 返回内容: {htm.text}")
+
         try:
-            htm = session.post(
-                f"{BASE_url}/auth/custom/token?username=13487283013&grant_type=password&scope=server&code={captcha}&randomStr=blockPuzzle",
-                json=data
-            )
-            htm.raise_for_status()
             response_json = htm.json()
+            logger.info(f"返回 JSON: {response_json}")  
             access_token_value = response_json.get('access_token')
 
             if access_token_value:
                 logger.info(f"第{attempt}次尝试成功")
-                existing_access_token = access_token_value
-                existing_timestamp = time.time()
                 success = True
                 break
-        except (requests.RequestException, json.JSONDecodeError) as e:
-            logger.error(f"登录失败: {str(e)}")
-            time.sleep(random.uniform(3, 10))
+        except Exception as e:
+            logger.error(f"尝试{attempt}失败: {str(e)}")
+            time.sleep(random.uniform(1, 10))
     
     if not success:
         logger.critical("达到最大尝试次数仍失败")
-        content = "## ❌ 考勤系统登录失败\n> 已达到最大尝试次数，请检查系统状态或手动处理"
-        send_wexinqq_md(wexinqq_url, content)
         exit(1)
 
 else:
     logger.info(f"Token 仍有效，到期时间: {datetime.fromtimestamp(existing_timestamp + 21600).strftime('%Y-%m-%d %H:%M:%S')}")
-    access_token_value = existing_access_token
 
 get_login(access_token_value)
