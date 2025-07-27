@@ -229,8 +229,15 @@ def get_login(access_token_value):
                 logger.debug(f"响应内容: {response.text[:200]}")
                 page += 1
                 continue
-            pages = response_list['data']['pages']
-            for item in response_list['data']['records']:
+             
+            # 原有业务逻辑处理
+            pages = response_list.get('data', {}).get('pages', 1)
+            records = response_list.get('data', {}).get('records', [])
+            
+            if not records:
+                logger.info("未获取到项目数据")
+                break                
+            for item in records:
                 if item['isFinish'] == '否':
                     XMB_NAME = item['sgxkName']
                     XMB_ID = item['sgxkId']
@@ -246,12 +253,11 @@ def get_login(access_token_value):
                     send_wexinqq_md(wexinqq_url, content)
                     logger.info(f"{XMB_NAME}项目缺勤提醒发送成功")
                     time.sleep(3 + 2 * random.random())
-        except KeyError as e:
-            logger.error(f"数据解析错误: {e}")
-        except requests.RequestException as e:
-            logger.error(f"请求失败: {e}")             
-        time.sleep(3 + 2 * random.random())
-        page += 1
+        except Exception as e:
+            logger.error(f"处理页面{page}时出错: {str(e)}")
+        finally:
+            page += 1
+            time.sleep(1)
 
 # 初始化 existing_access_token 和 existing_timestamp
 existing_access_token = None
