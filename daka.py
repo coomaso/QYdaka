@@ -26,7 +26,7 @@ idPP_url = "http://106.15.60.27:33333/labor/person/27faee7bb9cccc3322cad7d9da6ed
 idXMB_url = "http://106.15.60.27:33333/labor/workordereng/getEngInfoById?id=2f8af612cce346a69227890d4474abcd"
 
 headers = {
- "Host": "zhcjsmz.sanxiacloud.com",
+ "Host": "106.15.60.27:33333",
  "Connection": "keep-alive",
  "sec-ch-ua": '"Not.A/Brand";v="8", "Chromium";v="114"',
  "Accept": "*/*",
